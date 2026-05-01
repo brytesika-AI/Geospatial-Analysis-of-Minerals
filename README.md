@@ -1,64 +1,107 @@
 # GeoExplorer AI
 
-AI-assisted copper prospectivity screening for Arizona and Nevada.
+Role-aligned portfolio project for a KoBold Metals Data Scientist position.
 
-GeoExplorer AI is a portfolio-grade geospatial ML application inspired by the
-science-forward mineral exploration work described by KoBold Metals: turning
-exploration into a more repeatable, data-rich decision process. It is not an
-official KoBold product and does not imply endorsement.
+GeoExplorer AI is an AI-assisted mineral exploration decision-support tool for
+copper prospectivity screening across Arizona and Nevada. It demonstrates how I
+would build data tools with geoscientists: curate physical-system data, create
+statistically valid spatial predictions, visualize model evidence, rank
+exploration targets, and propose field programs that reduce uncertainty.
 
-## What it does
+The visual direction and product language are inspired by KoBold Metals' public
+science-forward positioning around AI, human expertise, and repeatable
+exploration. This is not an official KoBold product and does not imply
+endorsement.
 
-| Area | Capability |
+## Why this matches the role
+
+| KoBold role requirement | Evidence in this project |
 | --- | --- |
-| Interactive map | Folium heatmap of copper prospectivity across Arizona and Nevada |
-| Site scoring | Latitude/longitude lookup against a precomputed scored grid |
-| Geological interpretation | HuggingFace LLM explanation with deterministic fallback |
-| Batch scoring | Upload feature CSVs and score rows when the trained model bundle is available |
-| Model analytics | Spatial cross-validation comparison, feature importance, and score distribution |
-| Edge API | Cloudflare Worker routes for `/score`, `/heatmap`, `/interpret`, and `/health` |
+| Build proprietary exploration tools | Modular pipeline, Streamlit decision app, and Cloudflare scoring API |
+| Curate geophysical/geochemical/geologic/geographic data | Data ingestion scripts combine deposits, geochemistry, faults, terrain, and derived spatial features |
+| Predict compositional anomalies in the crust | Supervised prospectivity model trained on spatial feature vectors and applied to a 2D AZ/NV grid |
+| Evaluate statistically valid predictions | Spatial cross-validation to reduce spatial leakage, with ROC-AUC and PR-AUC comparisons |
+| Create rapid visualizations | Interactive heatmap, site scoring, feature breakdown, model analytics, score distribution, and target queue |
+| Guide field programs | Target Portfolio ranks locations by score and uncertainty proxy, then recommends next data collection |
+| Collaborate with geoscientists | Geological interpretation layer translates model output into exploration language and caveated recommendations |
+| Cloud computing resources | Cloudflare Worker deploy with Workers AI binding and HTTP scoring endpoints |
+| Software engineering practices | Git, tests, GitHub Actions CI, documented deployment, reproducible scripts, and `.env` handling |
+| Ownership of ambiguous scientific tools | End-to-end app from data acquisition through model training, interpretation, deployment, and reviewer-facing docs |
 
-## Current artifact status
+## Product workflow
 
-The checked-in demo artifacts are intended to make the app runnable in cloud
-demo environments. The data pipeline first tries public USGS endpoints and then
-falls back to synthetic-but-geologically-shaped data when those endpoints are
-unavailable.
+1. Curate data for mineral systems:
+   `scripts/01_download_data.py` collects public-source deposits, geochemistry,
+   and faults where available, with synthetic fallback data for reproducible demos.
 
-Current local artifacts:
+2. Engineer geoscience features:
+   `scripts/02_process_data.py` builds positive/negative samples, interpolates
+   geochemistry using IDW, adds terrain features, computes fault proximity, and
+   creates a 2D prediction grid.
 
-- Training samples: 1,590
+3. Train and evaluate models:
+   `scripts/03_train_model.py` compares Logistic Regression, Random Forest, and
+   XGBoost using spatial cross-validation, then saves the best model bundle and
+   scored grid.
+
+4. Make exploration decisions:
+   `app/streamlit_app.py` maps prospectivity, scores sites, scores uploaded
+   feature tables, visualizes model evidence, and ranks a target portfolio.
+
+5. Share through cloud tooling:
+   `cloudflare/worker.js` exposes demo scoring and interpretation endpoints for
+   partner-facing or field-facing workflows.
+
+## Current model snapshot
+
+- Region: Arizona and Nevada
+- Commodity: Copper
+- Training rows: 1,590
 - Prediction grid cells: 12,100
 - Best saved model: Random Forest
 - Spatial CV ROC-AUC: 0.903
 - Spatial CV PR-AUC: 0.716
-- Current raw geochemistry/deposit/fault artifacts may be synthetic fallbacks
 
-## Architecture
+The checked-in artifacts are meant to keep the app runnable in cloud demo
+environments. The pipeline tries public USGS endpoints first and falls back to
+synthetic-but-geologically-shaped data when those sources are unavailable.
 
-```text
-scripts/01_download_data.py
-    -> downloads USGS MRDS, NGDB, and fault data when available
-    -> falls back to synthetic AZ/NV copper exploration data
+## App capabilities
 
-scripts/02_process_data.py
-    -> builds positive/negative samples
-    -> interpolates geochemistry with IDW
-    -> adds elevation, slope, fault proximity, and deposit proximity
-    -> creates training_set.csv and prediction_grid.csv
+| View | Purpose |
+| --- | --- |
+| Prospectivity Map | Inspect 2D spatial prediction surfaces and training/source points |
+| Target Portfolio | Rank exploration targets and connect uncertainty to field-program design |
+| Site Scorer | Score a coordinate and generate a geologist-readable interpretation |
+| Batch Scoring | Upload feature tables and apply the trained model bundle |
+| Model Analytics | Compare model performance, feature importance, and score distributions |
+| Role Fit | Reviewer-facing mapping between KoBold responsibilities and project evidence |
+| API | Shows edge scoring contract for cloud deployment |
 
-scripts/03_train_model.py
-    -> compares Logistic Regression, Random Forest, and XGBoost
-    -> evaluates with spatial cross-validation
-    -> saves model bundle, metadata, feature importance, and scored grid
+## 2D now, 3D next
 
-app/streamlit_app.py
-    -> maps scores, scores coordinates, scores uploaded feature tables,
-       and explains results
+The current app implements a 2D prospectivity screen because the available demo
+artifacts are surface-level. The same structure is ready for 3D extension:
 
-cloudflare/worker.js
-    -> demo edge API with optional Workers AI interpretation
-```
+- Add depth-indexed geophysical inversion voxels as feature tables.
+- Add drillhole intervals or lithology logs as labelled observations.
+- Replace the 2D grid with `(x, y, z)` blocks or depth slices.
+- Add uncertainty estimates from ensembles, Bayesian models, or spatial
+  simulations.
+- Visualize section views, depth slices, and target volumes.
+
+## Statistical and geoscience choices
+
+- Spatial cross-validation avoids over-optimistic scores from nearby train/test
+  leakage.
+- Distance-to-fault and distance-to-deposit features encode structural and
+  mineral-system context.
+- IDW interpolation transfers sparse geochemistry onto target and grid
+  locations.
+- The LLM layer is interpretation-only; it does not make the score.
+- The target queue uses a simple uncertainty proxy to show the decision logic
+  that should eventually be replaced with calibrated uncertainty from ensembles
+  or Bayesian/geostatistical models.
 
 ## Quick start
 
@@ -77,9 +120,15 @@ python scripts/02_process_data.py
 python scripts/03_train_model.py
 ```
 
+Run tests:
+
+```bash
+pytest -q
+```
+
 ## Batch scoring format
 
-Upload a CSV containing the trained model feature columns:
+Upload a CSV containing these trained model feature columns:
 
 ```text
 elevation_m,slope_deg,log_cu_ppm,log_au_ppb,fe_pct,log_pb_ppm,log_zn_ppm,log_mo_ppm,log_as_ppm,dist_fault_km,dist_deposit_km
@@ -92,10 +141,13 @@ When `models/prospectivity_model.pkl` is present, the app adds:
 
 ## Cloudflare Worker
 
-The Worker is in `cloudflare/`.
+The Worker is live at:
+
+https://geo-explorer-ai.bryte-sika.workers.dev
+
+Deploy from the `cloudflare/` folder:
 
 ```bash
-cd cloudflare
 npx wrangler deploy
 ```
 
@@ -104,7 +156,7 @@ by default. Add a `kv_namespaces` binding named `GEO_KV` when you want
 production KV-backed grid lookup. Without KV, the Worker returns deterministic
 mock scores for development.
 
-## API example
+API example:
 
 ```bash
 curl -X POST https://geo-explorer-ai.bryte-sika.workers.dev/score \
@@ -114,13 +166,15 @@ curl -X POST https://geo-explorer-ai.bryte-sika.workers.dev/score \
 
 ## Tech stack
 
-- Geospatial: GeoPandas, Shapely, SciPy, SRTM
+- Python: pandas, NumPy, SciPy, GeoPandas, Shapely
 - ML: scikit-learn, XGBoost, SHAP, joblib
-- App: Streamlit, Folium, Plotly
-- LLM: HuggingFace Inference API
-- Edge: Cloudflare Workers and Workers AI
+- Visualization: Streamlit, Folium, Plotly
+- LLM: HuggingFace Inference API and Cloudflare Workers AI
+- Cloud: Cloudflare Workers
+- Engineering: Git, pytest, GitHub Actions CI
 
 ## Author
 
 Bright Sikazwe  
 GitHub: https://github.com/brytesika-AI
+

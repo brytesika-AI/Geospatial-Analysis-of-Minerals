@@ -414,6 +414,96 @@ def render_uploaded_scores(uploaded_df: pd.DataFrame | None, model_bundle: dict 
     st.dataframe(scored.sort_values("prospectivity_score", ascending=False), use_container_width=True)
 
 
+def render_target_portfolio(predictions: pd.DataFrame) -> None:
+    if predictions.empty:
+        st.warning("Prediction grid is unavailable. Run the pipeline to rebuild targets.")
+        return
+
+    target_cols = ["lat", "lon", "prospectivity_score", "risk_tier"]
+    feature_cols = [c for c in ["elevation_m", "log_cu_ppm", "dist_fault_km", "dist_deposit_km"] if c in predictions]
+    targets = predictions.nlargest(15, "prospectivity_score")[target_cols + feature_cols].copy()
+    targets["target_id"] = [f"AZNV-{i:03d}" for i in range(1, len(targets) + 1)]
+    targets["uncertainty_proxy"] = (
+        0.15
+        + 0.35 * (targets.get("dist_deposit_km", 50).clip(0, 80) / 80)
+        + 0.15 * (targets.get("dist_fault_km", 50).clip(0, 50) / 50)
+    ).round(3)
+    targets["field_program"] = np.where(
+        targets["uncertainty_proxy"] >= 0.45,
+        "Recon mapping + infill geochem",
+        "Priority mapping + ground truthing",
+    )
+    targets["decision"] = np.where(
+        targets["prospectivity_score"] >= 0.70,
+        "Advance",
+        "Hold for data",
+    )
+
+    st.markdown(
+        '<div class="info-box">This view turns model output into an exploration queue: '
+        'rank targets, identify where uncertainty is high, and propose the next field data '
+        'that would most reduce decision risk.</div>',
+        unsafe_allow_html=True,
+    )
+    st.dataframe(
+        targets[
+            [
+                "target_id",
+                "lat",
+                "lon",
+                "prospectivity_score",
+                "risk_tier",
+                "uncertainty_proxy",
+                "field_program",
+                "decision",
+            ]
+        ],
+        use_container_width=True,
+    )
+
+    fig = px.scatter(
+        targets,
+        x="uncertainty_proxy",
+        y="prospectivity_score",
+        size="prospectivity_score",
+        color="decision",
+        hover_name="target_id",
+        hover_data=["lat", "lon", "field_program"],
+        title="Target value versus uncertainty",
+        template="plotly_dark",
+        color_discrete_map={"Advance": "#c6ff6b", "Hold for data": "#d8924c"},
+    )
+    fig.update_layout(
+        paper_bgcolor="#0d1f18",
+        plot_bgcolor="#0d1f18",
+        font_color="#edf7ef",
+        xaxis_title="Uncertainty proxy",
+        yaxis_title="Prospectivity score",
+        margin=dict(l=0, r=0, t=42, b=0),
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def render_role_capabilities(meta: dict) -> None:
+    st.markdown("### Role-aligned capabilities demonstrated")
+    rows = [
+        ("Geoscience data system", "Curates deposits, geochemistry, faults, terrain, and derived spatial features into reproducible tables."),
+        ("2D prediction", "Scores a regular AZ/NV grid for compositional anomaly prospectivity."),
+        ("3D/physics extension", "Pipeline is structured to accept depth slices, inversions, remote sensing rasters, and geophysical grids as additional features."),
+        ("Statistical validity", "Uses spatial cross-validation to reduce spatial leakage and reports ROC-AUC/PR-AUC uncertainty."),
+        ("Uncertainty reduction", "Ranks targets by score plus uncertainty proxy and proposes next field data collection."),
+        ("Rapid visualization", "Interactive map, feature breakdown, model comparison, score distribution, and target queue."),
+        ("Cloud tool delivery", "Streamlit app plus Cloudflare Worker API for edge scoring and partner-facing demos."),
+        ("Software practice", "Git-tracked project with tests, CI workflow, modular scripts, and documented deployment path."),
+    ]
+    st.dataframe(pd.DataFrame(rows, columns=["KoBold requirement", "Project evidence"]), use_container_width=True)
+    if meta:
+        st.caption(
+            f"Current model snapshot: {meta.get('best_model', 'model')} with "
+            f"ROC-AUC {meta.get('roc_auc', 0):.3f} over {meta.get('n_train', 0):,} training rows."
+        )
+
+
 def render_model_comparison() -> None:
     comp_path = ROOT / "models" / "model_comparison.json"
     if not comp_path.exists():
@@ -514,10 +604,11 @@ def main() -> None:
         """
         <section class="hero">
           <div class="eyebrow">AI-assisted mineral exploration</div>
-          <h1>Finding copper signals with data, models, and geology.</h1>
+          <h1>From crustal data to field-ready copper targets.</h1>
           <p class="lede">
             GeoExplorer AI screens Arizona and Nevada for copper prospectivity using geochemical,
-            structural, terrain, and proximity features. It is a portfolio-grade exploration
+            structural, terrain, and proximity features, then converts predictions into target
+            ranking and field-program recommendations. It is a portfolio-grade exploration
             decision support tool, not a reserve estimate or regulatory disclosure.
           </p>
         </section>
@@ -533,8 +624,16 @@ def main() -> None:
         kpi3.metric("Training Points", f"{meta.get('n_train', 0):,}")
         kpi4.metric("Best ROC-AUC", f"{meta.get('roc_auc', 0):.3f}")
 
-    tab_map, tab_score, tab_batch, tab_model, tab_api = st.tabs(
-        ["Prospectivity Map", "Site Scorer", "Batch Scoring", "Model Analytics", "API"]
+    tab_map, tab_targets, tab_score, tab_batch, tab_model, tab_fit, tab_api = st.tabs(
+        [
+            "Prospectivity Map",
+            "Target Portfolio",
+            "Site Scorer",
+            "Batch Scoring",
+            "Model Analytics",
+            "Role Fit",
+            "API",
+        ]
     )
 
     with tab_map:
@@ -544,6 +643,9 @@ def main() -> None:
             unsafe_allow_html=True,
         )
         render_map(predictions, deposits, query_lat, query_lon)
+
+    with tab_targets:
+        render_target_portfolio(predictions)
 
     with tab_score:
         if score_btn or st.session_state.get("scored"):
@@ -578,6 +680,9 @@ def main() -> None:
         with col2:
             render_feature_importance(fi)
         render_score_distribution(predictions)
+
+    with tab_fit:
+        render_role_capabilities(meta)
 
     with tab_api:
         st.markdown("### Cloudflare Workers API")
