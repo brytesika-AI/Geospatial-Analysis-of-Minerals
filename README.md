@@ -107,7 +107,7 @@ mock scores for development.
 ## API example
 
 ```bash
-curl -X POST https://geo-explorer-ai.bright-sikazwe.workers.dev/score \
+curl -X POST https://geo-explorer-ai.bryte-sika.workers.dev/score \
   -H "Content-Type: application/json" \
   -d "{\"lat\":33.45,\"lon\":-110.80,\"features\":{\"cu_ppm\":450},\"interpret\":true}"
 ```
