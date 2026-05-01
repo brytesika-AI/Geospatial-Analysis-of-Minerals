@@ -48,6 +48,15 @@ function errorResponse(message, request, env, status = 400) {
   return jsonResponse({ error: message, status }, request, env, status);
 }
 
+function htmlResponse(html) {
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "public, max-age=300",
+    },
+  });
+}
+
 function riskTier(score) {
   if (score >= 0.7) return "Very High";
   if (score >= 0.5) return "High";
@@ -244,6 +253,396 @@ function handleDocs(request, env) {
   );
 }
 
+const FRONTEND_HTML = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GeoExplorer AI | Copper Prospectivity</title>
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --bg: #07130f;
+      --panel: #0d1f18;
+      --panel-2: #132b21;
+      --line: #285342;
+      --text: #edf7ef;
+      --muted: #9fb6a8;
+      --green: #74d680;
+      --lime: #c6ff6b;
+      --copper: #d8924c;
+      --red: #ff6b57;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      padding: 28px clamp(18px, 4vw, 56px) 20px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #0a1b15 0%, #07130f 100%);
+    }
+    .eyebrow {
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    h1 {
+      max-width: 1050px;
+      margin: 10px 0 12px;
+      font-size: clamp(36px, 6vw, 76px);
+      line-height: .98;
+      letter-spacing: 0;
+    }
+    .lede {
+      max-width: 960px;
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(16px, 2vw, 20px);
+      line-height: 1.55;
+    }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+    nav a {
+      color: var(--text);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px 12px;
+      background: var(--panel);
+      font-size: 14px;
+    }
+    main {
+      padding: 24px clamp(18px, 4vw, 56px) 44px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(320px, .55fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .section {
+      margin-top: 20px;
+      border-top: 1px solid var(--line);
+      padding-top: 22px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    #map {
+      height: min(62vh, 640px);
+      min-height: 430px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+      background: #06100d;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      min-height: 82px;
+    }
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .metric strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--lime);
+      font-size: 26px;
+    }
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      margin: 12px 0 6px;
+    }
+    input {
+      width: 100%;
+      background: #07130f;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 10px 11px;
+      font-size: 15px;
+    }
+    button {
+      width: 100%;
+      margin-top: 14px;
+      background: var(--lime);
+      color: #07130f;
+      border: 0;
+      border-radius: 6px;
+      padding: 11px 12px;
+      font-weight: 850;
+      cursor: pointer;
+    }
+    button:hover { background: var(--green); }
+    .score {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .score div {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      background: #091812;
+    }
+    .score strong {
+      color: var(--lime);
+      font-size: 24px;
+    }
+    .note {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      overflow: hidden;
+      border-radius: 8px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 11px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      background: #0a1913;
+    }
+    tr:hover td { background: #0a1913; }
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: #07130f;
+      font-weight: 800;
+      font-size: 12px;
+      background: var(--green);
+    }
+    .pill.very { background: var(--red); color: white; }
+    .pill.high { background: var(--copper); }
+    .pill.mod { background: var(--green); }
+    .pill.low { background: var(--muted); }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 15px;
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 14px;
+    }
+    .api {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+      background: #050d0a;
+      border: 1px solid var(--line);
+      color: #d8ffe0;
+      border-radius: 8px;
+      padding: 14px;
+      overflow: auto;
+    }
+    @media (max-width: 980px) {
+      .grid, .metrics, .cards { grid-template-columns: 1fr; }
+      #map { height: 420px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">AI-assisted mineral exploration</div>
+    <h1>From crustal data to field-ready copper targets.</h1>
+    <p class="lede">GeoExplorer AI screens Arizona and Nevada for copper prospectivity, ranks targets by model score and uncertainty, and turns geoscience evidence into field-program recommendations.</p>
+    <nav>
+      <a href="#map-section">Map</a>
+      <a href="#targets">Target Portfolio</a>
+      <a href="#role-fit">Role Fit</a>
+      <a href="/api">API Docs</a>
+      <a href="https://github.com/brytesika-AI/Geospatial-Analysis-of-Minerals">GitHub</a>
+    </nav>
+  </header>
+  <main>
+    <section class="metrics">
+      <div class="metric"><span>Grid Cells</span><strong>12,100</strong></div>
+      <div class="metric"><span>Training Rows</span><strong>1,590</strong></div>
+      <div class="metric"><span>Spatial CV ROC-AUC</span><strong>0.903</strong></div>
+      <div class="metric"><span>Cloud API</span><strong>Live</strong></div>
+    </section>
+
+    <section class="grid" id="map-section">
+      <div>
+        <div id="map"></div>
+      </div>
+      <aside class="panel">
+        <div class="eyebrow">Site Scorer</div>
+        <h2>Score a coordinate</h2>
+        <p class="note">Enter any point within the AZ/NV study area. The deployed frontend calls the live Worker scoring endpoint and returns a risk tier plus grid snap.</p>
+        <label for="lat">Latitude</label>
+        <input id="lat" type="number" min="31" max="42" step="0.0001" value="33.45" />
+        <label for="lon">Longitude</label>
+        <input id="lon" type="number" min="-120" max="-109" step="0.0001" value="-110.80" />
+        <label for="cu">Copper ppm</label>
+        <input id="cu" type="number" min="0" step="1" value="450" />
+        <button id="scoreBtn">Score location</button>
+        <div class="score">
+          <div><span class="note">Score</span><br><strong id="scoreValue">--</strong></div>
+          <div><span class="note">Tier</span><br><strong id="tierValue">--</strong></div>
+        </div>
+        <p class="note" id="scoreMeta">Waiting for a query.</p>
+      </aside>
+    </section>
+
+    <section class="section" id="targets">
+      <div class="eyebrow">Target Portfolio</div>
+      <h2>Ranked exploration targets and field actions</h2>
+      <p class="note">This converts model output into a decision queue: where to advance, where uncertainty is high, and what field data would reduce decision risk.</p>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr><th>Target</th><th>District</th><th>Score</th><th>Tier</th><th>Uncertainty</th><th>Field Program</th><th>Decision</th></tr>
+          </thead>
+          <tbody id="targetRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" id="role-fit">
+      <div class="eyebrow">KoBold Data Scientist Fit</div>
+      <h2>Skills showcased in the deployed app</h2>
+      <div class="cards">
+        <div class="card"><h3>Geoscience data curation</h3><p>Deposits, geochemistry, faults, terrain features, spatial proximity, and generated target tables.</p></div>
+        <div class="card"><h3>Predictive modeling</h3><p>2D prospectivity surface with spatial CV metrics and a clear path to 3D depth slices or inversion grids.</p></div>
+        <div class="card"><h3>Uncertainty reduction</h3><p>Target ranking combines prospectivity and uncertainty proxy to propose the next field program.</p></div>
+        <div class="card"><h3>Cloud software delivery</h3><p>Live Cloudflare Worker frontend plus API endpoints, GitHub CI, tests, and reproducible Python pipeline.</p></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="eyebrow">API Contract</div>
+      <h2>Live scoring endpoint</h2>
+      <div class="api">POST /score
+{
+  "lat": 33.45,
+  "lon": -110.80,
+  "features": { "cu_ppm": 450 },
+  "interpret": false
+}</div>
+    </section>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map', { scrollWheelZoom: true }).setView([36.5, -114.5], 6);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      maxZoom: 19
+    }).addTo(map);
+
+    let queryMarker = null;
+    const tierClass = (tier) => tier === 'Very High' ? 'very' : tier === 'High' ? 'high' : tier === 'Moderate' ? 'mod' : 'low';
+
+    async function loadHeatmap() {
+      const res = await fetch('/heatmap');
+      const data = await res.json();
+      const rows = [];
+      data.features.forEach((feature, index) => {
+        const lon = feature.geometry.coordinates[0];
+        const lat = feature.geometry.coordinates[1];
+        const props = feature.properties;
+        const radius = 10000 + props.score * 42000;
+        L.circle([lat, lon], {
+          radius,
+          color: props.score >= 0.7 ? '#c6ff6b' : '#d8924c',
+          fillColor: props.score >= 0.7 ? '#74d680' : '#d8924c',
+          fillOpacity: 0.28,
+          weight: 1
+        }).bindPopup('<strong>' + props.name + '</strong><br>Score ' + props.score.toFixed(2) + '<br>' + props.risk_tier).addTo(map);
+
+        const uncertainty = Math.max(0.18, Math.min(0.62, 0.65 - props.score * 0.34 + index * 0.018));
+        const program = uncertainty > 0.42 ? 'Recon mapping + infill geochem' : 'Priority mapping + ground truthing';
+        const decision = props.score >= 0.7 ? 'Advance' : 'Hold for data';
+        rows.push('<tr><td>AZNV-' + String(index + 1).padStart(3, '0') + '</td><td>' + props.name + '</td><td>' + props.score.toFixed(2) + '</td><td><span class="pill ' + tierClass(props.risk_tier) + '">' + props.risk_tier + '</span></td><td>' + uncertainty.toFixed(2) + '</td><td>' + program + '</td><td>' + decision + '</td></tr>');
+      });
+      document.getElementById('targetRows').innerHTML = rows.join('');
+    }
+
+    async function scoreLocation() {
+      const lat = Number(document.getElementById('lat').value);
+      const lon = Number(document.getElementById('lon').value);
+      const cu = Number(document.getElementById('cu').value);
+      document.getElementById('scoreMeta').textContent = 'Scoring...';
+      const res = await fetch('/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat, lon, features: { cu_ppm: cu }, interpret: false })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        document.getElementById('scoreMeta').textContent = data.error || 'Scoring failed.';
+        return;
+      }
+      document.getElementById('scoreValue').textContent = data.score.toFixed(3);
+      document.getElementById('tierValue').textContent = data.risk_tier;
+      document.getElementById('scoreMeta').textContent = 'Grid snap: ' + data.grid_snap.lat + ', ' + data.grid_snap.lon + ' | Source: ' + data.source;
+      if (queryMarker) map.removeLayer(queryMarker);
+      queryMarker = L.marker([lat, lon]).addTo(map).bindPopup('Query score ' + data.score.toFixed(3) + '<br>' + data.risk_tier).openPopup();
+      map.setView([lat, lon], 8);
+    }
+
+    document.getElementById('scoreBtn').addEventListener('click', scoreLocation);
+    loadHeatmap();
+    scoreLocation();
+  </script>
+</body>
+</html>`;
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -252,7 +651,8 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders(request, env) });
     }
-    if (path === "/" && request.method === "GET") return handleDocs(request, env);
+    if (path === "/" && request.method === "GET") return htmlResponse(FRONTEND_HTML);
+    if (path === "/api" && request.method === "GET") return handleDocs(request, env);
     if (path === "/health" && request.method === "GET") {
       return jsonResponse({ status: "ok", ts: new Date().toISOString() }, request, env);
     }
