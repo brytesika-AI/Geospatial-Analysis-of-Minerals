@@ -1,0 +1,29 @@
+{
+  "model_importance": {
+    "dist_deposit_km": 0.40915452475278263,
+    "log_cu_ppm": 0.20186133618695118,
+    "log_mo_ppm": 0.1230750535092894,
+    "slope_deg": 0.0553876655908544,
+    "log_au_ppb": 0.05109808412604101,
+    "elevation_m": 0.03429985479985905,
+    "log_as_ppm": 0.029852761477251317,
+    "dist_fault_km": 0.028759603373160306,
+    "log_pb_ppm": 0.02466237425120085,
+    "log_zn_ppm": 0.023561310188244183,
+    "fe_pct": 0.018287431744365614
+  },
+  "shap_importance": {},
+  "feature_display_names": {
+    "elevation_m": "Elevation (m)",
+    "slope_deg": "Slope (\u00b0)",
+    "log_cu_ppm": "Copper (log ppm)",
+    "log_au_ppb": "Gold (log ppb)",
+    "fe_pct": "Iron (%)",
+    "log_pb_ppm": "Lead (log ppm)",
+    "log_zn_ppm": "Zinc (log ppm)",
+    "log_mo_ppm": "Molybdenum (log ppm)",
+    "log_as_ppm": "Arsenic (log ppm)",
+    "dist_fault_km": "Dist. to Fault (km)",
+    "dist_deposit_km": "Dist. to Deposit (km)"
+  }
+}

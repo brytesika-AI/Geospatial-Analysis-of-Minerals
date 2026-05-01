@@ -1,0 +1,27 @@
+{
+  "best_model": "random_forest",
+  "roc_auc": 0.9025539063688066,
+  "pr_auc": 0.7162910026763504,
+  "n_train": 1590,
+  "n_features": 11,
+  "features": [
+    "elevation_m",
+    "slope_deg",
+    "log_cu_ppm",
+    "log_au_ppb",
+    "fe_pct",
+    "log_pb_ppm",
+    "log_zn_ppm",
+    "log_mo_ppm",
+    "log_as_ppm",
+    "dist_fault_km",
+    "dist_deposit_km"
+  ],
+  "region": "Arizona + Nevada",
+  "commodity": "Copper",
+  "grid_points": 12100,
+  "score_range": [
+    0.042033235581622676,
+    1.0
+  ]
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "logistic_regression",
+    "roc_auc_mean": 0.8090948176818425,
+    "roc_auc_std": 0.15069065034262222,
+    "pr_auc_mean": 0.6416507537656356,
+    "pr_auc_std": 0.2955326761830985,
+    "n_folds": 5
+  },
+  {
+    "name": "random_forest",
+    "roc_auc_mean": 0.9025539063688066,
+    "roc_auc_std": 0.10271409328133453,
+    "pr_auc_mean": 0.7162910026763504,
+    "pr_auc_std": 0.24978792133513647,
+    "n_folds": 5
+  },
+  {
+    "name": "xgboost",
+    "roc_auc_mean": 0.9024691540840326,
+    "roc_auc_std": 0.10504618205734477,
+    "pr_auc_mean": 0.7172312425999687,
+    "pr_auc_std": 0.2809151070592229,
+    "n_folds": 5
+  }
+]

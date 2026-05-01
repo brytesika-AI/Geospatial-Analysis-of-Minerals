@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "geo-explorer-ai",
+  "main": "worker.js",
+  "compatibility_date": "2026-04-15",
+  "compatibility_flags": ["nodejs_compat_v2"],
+  "workers_dev": true,
+  "vars": {
+    "CORS_ORIGIN": "https://geo-explorer-ai.streamlit.app"
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

@@ -1,0 +1,52 @@
+# Secrets - never commit.
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Data - ignore large/generated artifacts by default, but keep this demo runnable.
+data/raw/*.zip
+data/raw/*.csv
+data/raw/*.geojson
+data/processed/*.csv
+data/processed/*.pkl
+data/processed/*.geojson
+!data/raw/mrds_copper_az_nv.geojson
+!data/raw/faults_az_nv.geojson
+!data/processed/predictions.csv
+!data/processed/training_set.csv
+!data/processed/prediction_grid.csv
+
+# Models - keep the current demo bundle and metadata.
+models/*.pkl
+models/*.joblib
+models/*.json
+!models/prospectivity_model.pkl
+!models/feature_importance.json
+!models/model_comparison.json
+!models/model_metadata.json
+
+# Notebooks
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Cloudflare
+cloudflare/.wrangler/
+cloudflare/node_modules/
+
+# Streamlit
+.streamlit/secrets.toml
