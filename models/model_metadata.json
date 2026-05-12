@@ -1,13 +1,15 @@
 {
-  "best_model": "random_forest",
-  "roc_auc": 0.9025539063688066,
-  "pr_auc": 0.7162910026763504,
-  "n_train": 1590,
-  "n_features": 11,
+  "best_model": "xgboost",
+  "roc_auc": 0.9147793573291733,
+  "pr_auc": 0.7949010386878198,
+  "n_train": 2065,
+  "n_features": 13,
   "features": [
     "elevation_m",
     "slope_deg",
     "log_cu_ppm",
+    "log_co_ppm",
+    "log_ni_ppm",
     "log_au_ppb",
     "fe_pct",
     "log_pb_ppm",
@@ -17,11 +19,11 @@
     "dist_fault_km",
     "dist_deposit_km"
   ],
-  "region": "Arizona + Nevada",
-  "commodity": "Copper",
-  "grid_points": 12100,
+  "region": "Central/Southern Africa Copperbelt",
+  "commodity": "Copper \u00b7 Cobalt \u00b7 Nickel",
+  "grid_points": 16100,
   "score_range": [
-    0.042033235581622676,
+    0.023398471375306446,
     1.0
   ]
 }
