@@ -1,15 +1,36 @@
 """
 scripts/01_download_data.py
 ===========================
-Phase 1 – Data Acquisition
+Phase 1 – Data Acquisition  (Africa Copperbelt Edition)
 
-Downloads:
-  1. USGS MRDS copper deposits (WFS endpoint)  → data/raw/mrds_copper_az_nv.geojson
-  2. USGS NGDB soil geochemistry               → data/raw/geochem_az_nv.csv
-  3. USGS Quaternary Fault lines               → data/raw/faults_az_nv.geojson
+Downloads / generates:
+  1. USGS MRDS global mineral deposits (Cu / Co / Ni, Africa bbox)
+       → data/raw/mrds_africa_copper.geojson
+  2. GEM Global Active Faults (Africa subset)
+       → data/raw/faults_africa.geojson
+  3. Soil geochemistry – Africa Copperbelt calibrated dataset
+       → data/raw/geochem_africa.csv
 
-Falls back to realistic synthetic data (based on published AZ/NV mineralisation stats)
-if any source is unreachable, so the pipeline always completes.
+Region  : Central / Southern Africa — Zambia Copperbelt, DRC Katanga,
+          Botswana, Zimbabwe, Mozambique, Namibia  (15 °E–38 °E, 28 °S–0 °)
+Metals  : Copper · Cobalt · Nickel   (KoBold Metals critical-mineral focus)
+
+Data sources
+------------
+Deposits  : USGS MRDS WFS  (global endpoint; Africa bbox filter)
+            https://mrdata.usgs.gov/services/wfs/mrds
+Faults    : GEM Global Active Faults v2023
+            https://github.com/GEMScienceTools/gem-global-active-faults
+Geochem   : Calibrated synthetic dataset.  Background statistics drawn from:
+              • Tembo et al. (2009) — Zambia Copperbelt soil geochemistry
+              • Cailteux et al. (2005) — Katanga Supergroup Cu-Co systems
+              • USGS Professional Paper 1802, Chapter Africa
+            No free global API provides Africa soil geochemistry at NGDB
+            resolution; synthetic generation is documented and reproducible.
+Elevation : srtm.py (SRTM global 90 m DEM) — fetched in Phase 2.
+
+All sources fall back to geologically calibrated synthetic data when
+live endpoints are unreachable, so the pipeline always completes.
 """
 
 from __future__ import annotations
@@ -17,18 +38,16 @@ from __future__ import annotations
 import json
 import logging
 import os
-import random
 import sys
 import time
 from pathlib import Path
 
+import geopandas as gpd
 import numpy as np
 import pandas as pd
 import requests
-from shapely.geometry import LineString, MultiLineString, Point, mapping
-import geopandas as gpd
+from shapely.geometry import LineString, Point
 
-# ── project root ────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
@@ -37,7 +56,6 @@ DATA_PROCESSED = ROOT / "data" / "processed"
 DATA_RAW.mkdir(parents=True, exist_ok=True)
 DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
 
-# ── logging ─────────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s  %(levelname)-8s  %(message)s",
@@ -45,31 +63,61 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# ── spatial extent: Arizona + Nevada ────────────────────────────────────────────
-BBOX = dict(minlon=-120.0, minlat=31.0, maxlon=-109.0, maxlat=42.0)
+# ── Spatial extent: Central / Southern Africa Copperbelt ────────────────────
+BBOX = dict(minlon=15.0, minlat=-28.0, maxlon=38.0, maxlat=0.0)
 
-# Known copper-productive sub-regions (used to bias synthetic deposit placement)
-COPPER_DISTRICTS = [
-    # (center_lon, center_lat, radius_deg, name)
-    (-110.7, 31.6, 0.8, "Bisbee–Cochise"),
-    (-110.8, 32.7, 0.6, "Globe–Miami"),
-    (-112.5, 33.4, 0.5, "Bagdad"),
-    (-111.3, 33.4, 0.4, "Ray"),
-    (-111.0, 33.9, 0.5, "Superior"),
-    (-109.8, 33.4, 0.4, "Morenci–Clifton"),
-    (-114.9, 36.2, 0.5, "Searchlight–NV"),
-    (-116.5, 40.8, 0.4, "Battle Mountain–NV"),
-    (-117.1, 38.5, 0.5, "Tonopah–NV"),
-    (-115.4, 36.0, 0.4, "El Dorado–NV"),
-    (-118.6, 38.2, 0.5, "Mineral County–NV"),
-    (-114.2, 38.7, 0.4, "White Pine–NV"),
+# Known Cu / Co / Ni districts — bias synthetic fallback placement
+# Sources: USGS MRDS, SNL Metals & Mining, BGS World Mineral Statistics 2023
+MINERAL_DISTRICTS: list[tuple] = [
+    # (center_lon, center_lat, radius_deg, district_name, primary_commodity)
+
+    # ── Zambia Copperbelt ────────────────────────────────────────────────────
+    (27.85, -12.37, 0.50, "Chililabombwe-Mingomba",  "Cu"),     # KoBold Mingomba
+    (28.17, -12.53, 0.60, "Nchanga-Chingola",         "Cu"),
+    (28.63, -12.56, 0.50, "Mufulira",                 "Cu"),
+    (28.22, -12.82, 0.50, "Nkana-Kitwe",              "Cu-Co"),
+    (28.87, -12.27, 0.40, "Ndola",                    "Cu"),
+    (28.97, -11.47, 0.40, "Luanshya",                 "Cu"),
+    (27.46, -12.17, 0.50, "Kansanshi",                "Cu-Au"),
+    (29.36, -14.45, 0.40, "Konkola",                  "Cu"),
+    (28.50, -13.50, 0.35, "Nampundwe",                "Cu"),
+
+    # ── DRC Katanga Copperbelt ───────────────────────────────────────────────
+    (25.47, -10.73, 0.70, "Kolwezi",                  "Cu-Co"),
+    (26.97, -11.67, 0.50, "Lubumbashi",               "Cu-Co"),
+    (26.73, -10.93, 0.50, "Likasi",                   "Cu-Co"),
+    (26.11, -10.60, 0.60, "Tenke-Fungurume",          "Cu-Co"),
+    (27.25, -10.85, 0.40, "Kambove",                  "Cu-Co"),
+    (26.60, -9.75,  0.40, "Kinsenda-Musoshi",         "Cu"),
+    (25.90, -10.30, 0.45, "Dikulushi",                "Cu-Ag"),
+    (27.10, -12.20, 0.35, "Boss-Mining",              "Cu-Co"),
+    (26.30, -11.20, 0.40, "Ruashi",                   "Cu-Co"),
+
+    # ── Botswana ─────────────────────────────────────────────────────────────
+    (27.83, -22.00, 0.50, "Selebi-Phikwe",            "Cu-Ni"),
+    (24.65, -21.55, 0.40, "Boseto-Phoenix",            "Cu"),
+    (26.00, -20.00, 0.35, "Khoemacau",                "Cu-Ag"),
+
+    # ── Namibia ──────────────────────────────────────────────────────────────
+    (17.70, -19.50, 0.50, "Tsumeb",                   "Cu-Pb-Zn"),
+    (15.60, -22.20, 0.40, "Matchless Belt",           "Cu"),
+    (17.00, -18.50, 0.35, "Otjihase",                 "Cu"),
+
+    # ── Zimbabwe ─────────────────────────────────────────────────────────────
+    (30.00, -19.50, 0.40, "Empress",                  "Cu"),
+    (29.40, -18.00, 0.35, "Alaska Mine",              "Cu-Co"),
+
+    # ── Mozambique ───────────────────────────────────────────────────────────
+    (35.20, -18.00, 0.40, "Tete Province",            "Cu"),
+    (36.60, -16.20, 0.30, "Montepuez Area",           "Cu"),
 ]
 
-TIMEOUT = 15  # seconds per HTTP request
+TIMEOUT = 25
+GEM_TIMEOUT = 120   # GEM GeoJSON is ~40 MB
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 1. USGS MRDS — copper mineral deposits
+# 1. USGS MRDS — Cu / Co / Ni mineral deposits (global endpoint, Africa bbox)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 MRDS_WFS = (
@@ -83,305 +131,288 @@ MRDS_WFS = (
 
 
 def _fetch_mrds_wfs(bbox: dict) -> gpd.GeoDataFrame | None:
-    """Attempt to download MRDS deposits via WFS."""
     url = MRDS_WFS.format(**bbox)
-    log.info("Requesting MRDS WFS …")
+    log.info("Requesting USGS MRDS (Africa bbox) …")
     try:
         r = requests.get(url, timeout=TIMEOUT)
         r.raise_for_status()
         fc = r.json()
+        if not fc.get("features"):
+            return None
         gdf = gpd.GeoDataFrame.from_features(fc["features"], crs="EPSG:4326")
-        log.info("  WFS returned %d features", len(gdf))
+        log.info("  MRDS returned %d raw features", len(gdf))
         return gdf
     except Exception as exc:
         log.warning("  MRDS WFS unavailable: %s", exc)
         return None
 
 
-def _filter_copper(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """Keep only records that list copper as a primary or secondary commodity."""
-    cu_mask = pd.Series(False, index=gdf.index)
+def _filter_critical_minerals(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Retain Cu / Co / Ni deposits."""
+    pattern = r"\b(CU|COPPER|CO|COBALT|NI|NICKEL)\b"
+    mask = pd.Series(False, index=gdf.index)
     for col in ("commod1", "commod2", "commod3", "commod_list", "commodities"):
         if col in gdf.columns:
-            cu_mask |= gdf[col].astype(str).str.upper().str.contains(r"\bCU\b|COPPER", na=False)
-    filtered = gdf[cu_mask].copy()
-    log.info("  Copper deposits after filter: %d", len(filtered))
-    return filtered
+            mask |= (
+                gdf[col].astype(str).str.upper().str.contains(pattern, na=False, regex=True)
+            )
+    result = gdf[mask].copy()
+    log.info("  Cu/Co/Ni deposits after commodity filter: %d", len(result))
+    return result
 
 
-def _synthetic_deposits(n: int = 320) -> gpd.GeoDataFrame:
+def _synthetic_deposits(n: int = 420) -> gpd.GeoDataFrame:
     """
-    Generate realistic synthetic copper deposits for AZ/NV.
-
-    Strategy:
-      - 75% placed near known productive districts (spatially biased)
-      - 25% placed randomly within the bounding box (for background variety)
+    Synthetic Cu/Co/Ni deposits biased toward known African mineral districts.
+    75 % within district clusters, 25 % random background.
     """
-    log.info("Generating %d synthetic copper deposits …", n)
+    log.info("Generating %d synthetic African mineral deposits …", n)
     rng = np.random.default_rng(42)
-    lons, lats, names = [], [], []
+    lons, lats, names, commodities = [], [], [], []
 
     n_clustered = int(n * 0.75)
     n_random = n - n_clustered
+    per_district = max(1, n_clustered // len(MINERAL_DISTRICTS))
 
-    # Clustered around known districts
-    per_district = n_clustered // len(COPPER_DISTRICTS)
-    for clon, clat, rad, dname in COPPER_DISTRICTS:
+    for clon, clat, rad, dname, commod in MINERAL_DISTRICTS:
         for _ in range(per_district):
             angle = rng.uniform(0, 2 * np.pi)
             r = rng.uniform(0, rad)
             lons.append(clon + r * np.cos(angle))
             lats.append(clat + r * np.sin(angle))
             names.append(dname)
+            commodities.append(commod)
 
-    # Random background
     lons += rng.uniform(BBOX["minlon"], BBOX["maxlon"], n_random).tolist()
     lats += rng.uniform(BBOX["minlat"], BBOX["maxlat"], n_random).tolist()
     names += ["background"] * n_random
+    commodities += ["Cu"] * n_random
 
     gdf = gpd.GeoDataFrame(
         {
-            "dep_id": [f"SYN-{i:04d}" for i in range(len(lons))],
-            "name": [f"Synthetic deposit {i}" for i in range(len(lons))],
+            "dep_id":   [f"AFR-{i:04d}" for i in range(len(lons))],
+            "name":     [f"Synthetic deposit {i}" for i in range(len(lons))],
             "district": names,
-            "commod1": "CU",
-            "source": "synthetic",
+            "commod1":  commodities,
+            "source":   "synthetic_africa",
         },
         geometry=[Point(lo, la) for lo, la in zip(lons, lats)],
         crs="EPSG:4326",
     )
-    # Clip to bbox
     gdf = gdf.cx[BBOX["minlon"]:BBOX["maxlon"], BBOX["minlat"]:BBOX["maxlat"]]
     return gdf.reset_index(drop=True)
 
 
 def download_deposits(force: bool = False) -> gpd.GeoDataFrame:
-    out = DATA_RAW / "mrds_copper_az_nv.geojson"
+    out = DATA_RAW / "mrds_africa_copper.geojson"
     if out.exists() and not force:
         log.info("Deposits cache hit → %s", out)
         return gpd.read_file(out)
 
     gdf = _fetch_mrds_wfs(BBOX)
     if gdf is not None and len(gdf) > 10:
-        gdf = _filter_copper(gdf)
+        gdf = _filter_critical_minerals(gdf)
     if gdf is None or len(gdf) < 10:
-        gdf = _synthetic_deposits(320)
+        log.info("Falling back to synthetic Africa deposits.")
+        gdf = _synthetic_deposits(420)
 
-    # Ensure we have lon/lat columns for easy use later
     gdf["lon"] = gdf.geometry.x
     gdf["lat"] = gdf.geometry.y
-
     gdf.to_file(out, driver="GeoJSON")
     log.info("Saved deposits → %s  (%d rows)", out.name, len(gdf))
     return gdf
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 2. USGS NGDB — soil geochemistry
+# 2. Soil geochemistry — Africa Copperbelt calibrated dataset
 # ═══════════════════════════════════════════════════════════════════════════════
+#
+# No free globally-accessible API provides Africa soil geochemistry at NGDB
+# resolution.  Calibrated synthetic data with published background statistics:
+#
+#   Element  Background   Anomaly threshold   Reference
+#   Cu       50–150 ppm   ≥ 500 ppm           Tembo et al. (2009)
+#   Co       30–80 ppm    ≥ 100 ppm           Cailteux et al. (2005)
+#   Ni       25–75 ppm    ≥ 100 ppm           Maier et al. (2013)
+#   Zn       80–200 ppm   ≥ 300 ppm           USGS Prof. Paper 1802
+#   Fe       3–7 %        —                   Lateritic tropical soils
+#   Au       0.3–2 ppb    —                   Non-porphyry SHSC systems
+#   As       5–25 ppm     —
 
-# USGS NGDB sediment state-level query (public REST)
-NGDB_REST = (
-    "https://mrdata.usgs.gov/geochem/ngdb/select.php"
-    "?state={state}&type=sed&format=csv"
-)
+AFRICA_GEOCHEM_BG: dict[str, tuple[float, float]] = {
+    # (log-normal median, log-sigma)
+    "cu_ppm":  (80,   0.65),
+    "co_ppm":  (45,   0.70),   # cobalt — hallmark of DRC Katanga systems
+    "ni_ppm":  (40,   0.65),   # nickel — Botswana Cu-Ni focus
+    "au_ppb":  (0.8,  0.80),
+    "fe_pct":  (4.5,  0.35),
+    "pb_ppm":  (25,   0.60),
+    "zn_ppm":  (100,  0.55),
+    "mo_ppm":  (0.6,  0.65),   # Mo low — SHSC, not porphyry
+    "as_ppm":  (12,   0.75),
+}
 
-# Elements we care about (ppm unless noted)
-GEOCHEM_COLS = {
-    "cu": "cu_ppm",    # copper
-    "au": "au_ppb",    # gold (ppb)
-    "fe": "fe_pct",    # iron (%)
-    "pb": "pb_ppm",    # lead
-    "zn": "zn_ppm",    # zinc
-    "mo": "mo_ppm",    # molybdenum
-    "as": "as_ppm",    # arsenic
+CLIP_LIMITS: dict[str, tuple[float, float]] = {
+    "cu_ppm":  (5,    50_000),
+    "co_ppm":  (2,    15_000),
+    "ni_ppm":  (2,     8_000),
+    "au_ppb":  (0.1,   3_000),
+    "fe_pct":  (0.5,      25),
+    "pb_ppm":  (2,     3_000),
+    "zn_ppm":  (5,    10_000),
+    "mo_ppm":  (0.1,     500),
+    "as_ppm":  (1,     2_000),
 }
 
 
-def _fetch_ngdb_state(state: str) -> pd.DataFrame | None:
-    url = NGDB_REST.format(state=state)
-    log.info("  Requesting NGDB/%s …", state)
-    try:
-        r = requests.get(url, timeout=TIMEOUT)
-        r.raise_for_status()
-        df = pd.read_csv(pd.io.common.BytesIO(r.content), low_memory=False)
-        log.info("    %d rows", len(df))
-        return df
-    except Exception as exc:
-        log.warning("    NGDB/%s unavailable: %s", state, exc)
-        return None
-
-
-def _synthetic_geochem(n: int = 3000) -> pd.DataFrame:
-    """
-    Synthetic soil geochemistry with AZ/NV-realistic statistics.
-
-    Background values derived from published USGS median soil concentrations
-    for the Basin-and-Range province.  Anomalies are injected near the known
-    copper districts to make the model task learnable.
-    """
-    log.info("Generating %d synthetic geochemistry samples …", n)
+def _synthetic_geochem(n: int = 4000) -> pd.DataFrame:
+    log.info("Generating %d Africa Copperbelt geochemistry samples …", n)
     rng = np.random.default_rng(123)
 
     lons = rng.uniform(BBOX["minlon"], BBOX["maxlon"], n)
     lats = rng.uniform(BBOX["minlat"], BBOX["maxlat"], n)
 
-    # Background geochemistry (log-normal distributions, basin-range medians)
-    cu_bg = rng.lognormal(mean=np.log(18), sigma=0.7, size=n)    # ~18 ppm median
-    au_bg = rng.lognormal(mean=np.log(1.2), sigma=0.8, size=n)   # ~1.2 ppb median
-    fe_bg = rng.lognormal(mean=np.log(2.8), sigma=0.4, size=n)   # ~2.8 % median
-    pb_bg = rng.lognormal(mean=np.log(14), sigma=0.6, size=n)
-    zn_bg = rng.lognormal(mean=np.log(45), sigma=0.5, size=n)
-    mo_bg = rng.lognormal(mean=np.log(0.8), sigma=0.7, size=n)
-    as_bg = rng.lognormal(mean=np.log(5), sigma=0.8, size=n)
+    arrays: dict[str, np.ndarray] = {}
+    for elem, (med, sigma) in AFRICA_GEOCHEM_BG.items():
+        arrays[elem] = rng.lognormal(mean=np.log(med), sigma=sigma, size=n)
 
-    # Inject anomalies near copper districts
-    for clon, clat, rad, _ in COPPER_DISTRICTS:
+    for clon, clat, rad, _, commod in MINERAL_DISTRICTS:
         dist = np.hypot(lons - clon, lats - clat)
-        mask = dist < rad * 1.5
-        multiplier = np.exp(2.0 * np.maximum(0, 1 - dist[mask] / (rad * 1.5)))
-        cu_bg[mask] *= multiplier
-        au_bg[mask] *= multiplier ** 0.5
-        mo_bg[mask] *= multiplier ** 0.7
+        mask = dist < rad * 2.0
+        if not mask.any():
+            continue
+        proximity = np.maximum(0.0, 1.0 - dist[mask] / (rad * 2.0))
 
-    df = pd.DataFrame(
-        {
-            "lon": lons,
-            "lat": lats,
-            "cu_ppm": cu_bg.clip(1, 10000),
-            "au_ppb": au_bg.clip(0.1, 5000),
-            "fe_pct": fe_bg.clip(0.1, 20),
-            "pb_ppm": pb_bg.clip(1, 2000),
-            "zn_ppm": zn_bg.clip(1, 3000),
-            "mo_ppm": mo_bg.clip(0.1, 500),
-            "as_ppm": as_bg.clip(0.5, 1000),
-            "source": "synthetic",
-        }
-    )
+        arrays["cu_ppm"][mask] *= np.exp(3.5 * proximity)
+        arrays["co_ppm"][mask] *= np.exp(3.0 * proximity if "Co" in commod else 1.2 * proximity)
+        arrays["ni_ppm"][mask] *= np.exp(2.5 * proximity if "Ni" in commod else 0.8 * proximity)
+        arrays["au_ppb"][mask] *= np.exp(1.5 * proximity)
+        arrays["zn_ppm"][mask] *= np.exp(2.0 * proximity)
+        arrays["as_ppm"][mask] *= np.exp(1.5 * proximity)
+
+    df = pd.DataFrame({"lon": lons, "lat": lats, "source": "synthetic_copperbelt"})
+    for elem, (lo, hi) in CLIP_LIMITS.items():
+        df[elem] = arrays[elem].clip(lo, hi)
     return df
 
 
-def _normalise_geochem(df: pd.DataFrame) -> pd.DataFrame:
-    """Rename raw NGDB columns to our standard names."""
-    rename = {}
-    for raw, std in GEOCHEM_COLS.items():
-        for col in df.columns:
-            if col.lower().startswith(raw):
-                rename[col] = std
-                break
-    df = df.rename(columns=rename)
-
-    # Ensure lat/lon present
-    for latcol in ("latitude", "lat_dd", "lat"):
-        if latcol in df.columns:
-            df = df.rename(columns={latcol: "lat"})
-            break
-    for loncol in ("longitude", "lon_dd", "lon"):
-        if loncol in df.columns:
-            df = df.rename(columns={loncol: "lon"})
-            break
-
-    keep = ["lat", "lon"] + [c for c in GEOCHEM_COLS.values() if c in df.columns]
-    df = df[keep].dropna(subset=["lat", "lon"])
-
-    # Clip to AZ/NV bbox
-    df = df[
-        (df.lon >= BBOX["minlon"]) & (df.lon <= BBOX["maxlon"]) &
-        (df.lat >= BBOX["minlat"]) & (df.lat <= BBOX["maxlat"])
-    ].copy()
-    return df.reset_index(drop=True)
-
-
 def download_geochem(force: bool = False) -> pd.DataFrame:
-    out = DATA_RAW / "geochem_az_nv.csv"
+    out = DATA_RAW / "geochem_africa.csv"
     if out.exists() and not force:
         log.info("Geochem cache hit → %s", out)
         return pd.read_csv(out)
 
-    log.info("Downloading USGS NGDB geochemistry …")
-    frames = []
-    for state in ("AZ", "NV"):
-        df = _fetch_ngdb_state(state)
-        if df is not None:
-            frames.append(df)
-        time.sleep(0.5)   # be polite
-
-    if frames:
-        df = pd.concat(frames, ignore_index=True)
-        df = _normalise_geochem(df)
-        if len(df) >= 100:
-            log.info("Real NGDB data: %d samples", len(df))
-            df["source"] = "usgs_ngdb"
-            df.to_csv(out, index=False)
-            return df
-
-    # Fallback
-    df = _synthetic_geochem(3000)
+    df = _synthetic_geochem(4000)
     df.to_csv(out, index=False)
     log.info("Saved geochem → %s  (%d rows)", out.name, len(df))
     return df
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 3. USGS Quaternary Faults
+# 3. GEM Global Active Faults — Africa subset
 # ═══════════════════════════════════════════════════════════════════════════════
 
-FAULT_WFS = (
-    "https://earthquake.usgs.gov/arcgis/rest/services/eq/HazardsSummary_US/MapServer/4"
-    "/query?where=1%3D1&outFields=*&geometry="
-    "{minlon}%2C{minlat}%2C{maxlon}%2C{maxlat}"
-    "&geometryType=esriGeometryEnvelope&inSR=4326&outSR=4326&f=geojson"
+GEM_FAULTS_URL = (
+    "https://raw.githubusercontent.com/GEMScienceTools/gem-global-active-faults"
+    "/master/geojson/gem_active_faults_harmonized.geojson"
 )
 
 
-def _synthetic_faults() -> gpd.GeoDataFrame:
-    """Generate synthetic fault lines for AZ/NV based on Basin-and-Range structure."""
-    log.info("Generating synthetic fault network …")
-    rng = np.random.default_rng(77)
-    lines = []
+def _fetch_gem_faults(bbox: dict) -> gpd.GeoDataFrame | None:
+    """Download GEM Global Active Faults and clip to Africa study bbox."""
+    log.info("Downloading GEM Global Active Faults (~40 MB, may take ~60 s) …")
+    try:
+        r = requests.get(GEM_FAULTS_URL, timeout=GEM_TIMEOUT)
+        r.raise_for_status()
+        data = r.json()
+        gdf = gpd.GeoDataFrame.from_features(data["features"], crs="EPSG:4326")
+        log.info("  GEM: %d global fault segments downloaded", len(gdf))
 
-    # NW-trending Basin-and-Range normal faults
-    for _ in range(40):
-        clon = rng.uniform(BBOX["minlon"], BBOX["maxlon"])
-        clat = rng.uniform(BBOX["minlat"], BBOX["maxlat"])
-        length = rng.uniform(0.5, 3.0)
-        strike_rad = rng.uniform(np.radians(-30), np.radians(30))  # ~N-S ± 30°
-        dlon = length / 2 * np.sin(strike_rad)
-        dlat = length / 2 * np.cos(strike_rad)
-        lines.append(
-            LineString([(clon - dlon, clat - dlat), (clon + dlon, clat + dlat)])
+        from shapely.geometry import box as shapely_box
+        africa_box = gpd.GeoDataFrame(
+            geometry=[shapely_box(
+                bbox["minlon"], bbox["minlat"],
+                bbox["maxlon"], bbox["maxlat"],
+            )],
+            crs="EPSG:4326",
         )
+        clipped = gpd.clip(gdf, africa_box)
+        log.info("  Africa subset: %d fault segments", len(clipped))
+        return clipped if len(clipped) >= 3 else None
+    except Exception as exc:
+        log.warning("  GEM faults unavailable: %s", exc)
+        return None
 
-    gdf = gpd.GeoDataFrame(
-        {"fault_id": range(len(lines)), "fault_type": "Basin-and-Range normal"},
-        geometry=lines,
-        crs="EPSG:4326",
+
+def _synthetic_faults_africa() -> gpd.GeoDataFrame:
+    """
+    Synthetic fault network for Central / Southern Africa.
+
+    Structural trends (Daly et al. 2020; Chorowicz 2005):
+      - East African Rift System : NNE-trending normal faults
+      - Lufilian Arc thrusts     : NW–SE, Zambia / DRC border
+      - Damara-Katanga belt      : E–W faults, Namibia / Botswana
+      - Congo Craton margins     : NNW lineaments
+    """
+    log.info("Generating synthetic Africa fault network …")
+    rng = np.random.default_rng(77)
+    lines, ftypes = [], []
+
+    # East African Rift System
+    for _ in range(35):
+        clon = rng.uniform(28, 36); clat = rng.uniform(-20, -4)
+        length = rng.uniform(0.8, 5.0)
+        s = rng.uniform(np.radians(-20), np.radians(20))
+        dl, dlt = (length / 2) * np.sin(s), (length / 2) * np.cos(s)
+        lines.append(LineString([(clon - dl, clat - dlt), (clon + dl, clat + dlt)]))
+        ftypes.append("EARS normal")
+
+    # Lufilian Arc thrusts
+    for _ in range(30):
+        clon = rng.uniform(24, 30); clat = rng.uniform(-14, -9)
+        length = rng.uniform(0.5, 3.5)
+        s = rng.uniform(np.radians(120), np.radians(150))
+        dl, dlt = (length / 2) * np.sin(s), (length / 2) * np.cos(s)
+        lines.append(LineString([(clon - dl, clat - dlt), (clon + dl, clat + dlt)]))
+        ftypes.append("Lufilian Arc thrust")
+
+    # Damara belt
+    for _ in range(25):
+        clon = rng.uniform(16, 26); clat = rng.uniform(-25, -18)
+        length = rng.uniform(0.5, 2.5)
+        s = rng.uniform(np.radians(80), np.radians(100))
+        dl, dlt = (length / 2) * np.sin(s), (length / 2) * np.cos(s)
+        lines.append(LineString([(clon - dl, clat - dlt), (clon + dl, clat + dlt)]))
+        ftypes.append("Damara belt")
+
+    # Congo Craton margin lineaments
+    for _ in range(15):
+        clon = rng.uniform(18, 24); clat = rng.uniform(-10, -4)
+        length = rng.uniform(0.5, 2.0)
+        s = rng.uniform(np.radians(-40), np.radians(-10))
+        dl, dlt = (length / 2) * np.sin(s), (length / 2) * np.cos(s)
+        lines.append(LineString([(clon - dl, clat - dlt), (clon + dl, clat + dlt)]))
+        ftypes.append("Congo Craton margin")
+
+    return gpd.GeoDataFrame(
+        {"fault_id": range(len(lines)), "fault_type": ftypes},
+        geometry=lines, crs="EPSG:4326",
     )
-    return gdf
 
 
 def download_faults(force: bool = False) -> gpd.GeoDataFrame:
-    out = DATA_RAW / "faults_az_nv.geojson"
+    out = DATA_RAW / "faults_africa.geojson"
     if out.exists() and not force:
         log.info("Faults cache hit → %s", out)
         return gpd.read_file(out)
 
-    log.info("Downloading USGS fault data …")
-    url = FAULT_WFS.format(**BBOX)
-    try:
-        r = requests.get(url, timeout=TIMEOUT)
-        r.raise_for_status()
-        gdf = gpd.GeoDataFrame.from_features(r.json()["features"], crs="EPSG:4326")
-        if len(gdf) >= 5:
-            log.info("  Real fault data: %d features", len(gdf))
-            gdf.to_file(out, driver="GeoJSON")
-            return gdf
-    except Exception as exc:
-        log.warning("  Fault API unavailable: %s", exc)
+    gdf = _fetch_gem_faults(BBOX)
+    if gdf is None:
+        log.info("Using synthetic Africa fault network.")
+        gdf = _synthetic_faults_africa()
 
-    gdf = _synthetic_faults()
     gdf.to_file(out, driver="GeoJSON")
-    log.info("Saved faults → %s  (%d features)", out.name, len(gdf))
+    log.info("Saved faults → %s  (%d segments)", out.name, len(gdf))
     return gdf
 
 
@@ -391,22 +422,23 @@ def download_faults(force: bool = False) -> gpd.GeoDataFrame:
 
 def main() -> None:
     force = os.getenv("FORCE_REFRESH", "0") == "1"
-    log.info("=" * 60)
-    log.info("GeoExplorer AI — Phase 1: Data Acquisition")
-    log.info("Region: Arizona + Nevada  |  Commodity: Copper")
-    log.info("=" * 60)
+    log.info("=" * 65)
+    log.info("GeoExplorer AI — Phase 1: Africa Data Acquisition")
+    log.info("Region  : Central/Southern Africa Copperbelt")
+    log.info("Metals  : Copper · Cobalt · Nickel   (KoBold Metals focus)")
+    log.info("=" * 65)
 
     deposits = download_deposits(force=force)
-    geochem = download_geochem(force=force)
-    faults = download_faults(force=force)
+    geochem  = download_geochem(force=force)
+    faults   = download_faults(force=force)
 
-    log.info("-" * 60)
+    log.info("-" * 65)
     log.info("Summary:")
-    log.info("  Copper deposits : %d", len(deposits))
-    log.info("  Geochem samples : %d", len(geochem))
-    log.info("  Fault segments  : %d", len(faults))
-    log.info("-" * 60)
-    log.info("Phase 1 data ready. Run: python scripts/02_process_data.py")
+    log.info("  Mineral deposits : %d", len(deposits))
+    log.info("  Geochem samples  : %d", len(geochem))
+    log.info("  Fault segments   : %d", len(faults))
+    log.info("-" * 65)
+    log.info("Phase 1 complete. Run: python scripts/02_process_data.py")
 
 
 if __name__ == "__main__":
