@@ -45,6 +45,18 @@ Key districts
   KoBold Mingomba project: ~Chililabombwe area, Zambia.
   DRC Katanga: Kolwezi, Tenke-Fungurume, Likasi, Lubumbashi.
   Botswana: Selebi-Phikwe (magmatic Cu-Ni sulphide — different system).
+  South Africa:
+    Bushveld Igneous Complex (BIC): World's largest layered mafic intrusion.
+    Hosts Ni-Cu sulphide mineralisation on eastern/western limbs (Platreef,
+    Waterberg, Burgersfort). Ni > Cu in BIC systems; Co is low.
+    Phalaborwa/Palabora: Alkaline carbonatite-hosted Cu deposit (Limpopo Province).
+    One of Africa's major Cu producers; associated with P, vermiculite, uranium.
+    Namaqualand / O'Kiep: Cu deposits in Proterozoic Namaqua-Natal Metamorphic
+    Province (~1050–1150 Ma), broadly coeval with Lufilian Arc. Metasediment-hosted.
+    Aggeneys / Black Mountain: SEDEX-type Pb-Zn-Cu-Ag (Northern Cape). Higher
+    Zn/Pb relative to SHSC; different fluid regime from Katanga.
+    Kalahari Copper Belt (Northern Cape): Southern extension of the Zambian SHSC
+    system into Botswana/RSA border region. Cu-Ag in Proterozoic sediments.
 
 Geochemical indicator suite
   Primary:   Cu, Co (key — Co/Cu ratio > 0.1 is strongly Katanga-type),

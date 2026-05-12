@@ -50,7 +50,7 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-BBOX = dict(minlon=15.0, minlat=-28.0, maxlon=38.0, maxlat=0.0)
+BBOX = dict(minlon=15.0, minlat=-35.0, maxlon=38.0, maxlat=0.0)
 SEED = 42
 NEG_RATIO = 4
 BUFFER_DEG = 0.20       # ~22 km exclusion zone around known deposits

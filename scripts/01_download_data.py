@@ -64,7 +64,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 # ── Spatial extent: Central / Southern Africa Copperbelt ────────────────────
-BBOX = dict(minlon=15.0, minlat=-28.0, maxlon=38.0, maxlat=0.0)
+BBOX = dict(minlon=15.0, minlat=-35.0, maxlon=38.0, maxlat=0.0)
 
 # Known Cu / Co / Ni districts — bias synthetic fallback placement
 # Sources: USGS MRDS, SNL Metals & Mining, BGS World Mineral Statistics 2023
@@ -110,6 +110,18 @@ MINERAL_DISTRICTS: list[tuple] = [
     # ── Mozambique ───────────────────────────────────────────────────────────
     (35.20, -18.00, 0.40, "Tete Province",            "Cu"),
     (36.60, -16.20, 0.30, "Montepuez Area",           "Cu"),
+
+    # ── South Africa ─────────────────────────────────────────────────────────
+    (31.13, -23.93, 0.50, "Phalaborwa-Palabora",      "Cu"),       # Palavora alkaline complex
+    (18.85, -29.12, 0.55, "Aggeneys-Black Mountain",  "Cu-Zn"),    # SEDEX Pb-Zn-Cu-Ag
+    (17.80, -29.57, 0.50, "O'Kiep-Namaqualand",       "Cu"),       # Proterozoic metasediment
+    (29.00, -24.80, 0.65, "Bushveld East Ni-Cu",      "Ni-Cu"),    # Bushveld Igneous Complex
+    (27.20, -24.30, 0.55, "Waterberg-Platreef",       "Ni-Cu"),    # Platreef Cu-Ni-PGE
+    (27.80, -25.80, 0.50, "Bushveld West Ni-Cu",      "Ni-Cu"),    # Western limb
+    (20.50, -28.50, 0.45, "Kalahari Copper Belt SA",  "Cu"),       # Extension, Northern Cape
+    (30.80, -22.30, 0.40, "Limpopo Belt Cu",          "Cu"),       # Limpopo metamorphic belt
+    (22.50, -29.50, 0.40, "Prieska Copper",           "Cu-Zn"),    # VMS-type
+    (19.50, -30.50, 0.40, "Copperton-Areachap",       "Cu-Zn"),    # Northern Cape VMS
 ]
 
 TIMEOUT = 25

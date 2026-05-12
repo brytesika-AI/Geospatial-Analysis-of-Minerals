@@ -158,14 +158,26 @@ def score_to_rgba(score: float, alpha: int = 180) -> list[int]:
 # ── Study-area bounds ─────────────────────────────────────────────────────────
 
 # Central / Southern Africa Copperbelt study area
-STUDY_BBOX = dict(minlon=15.0, minlat=-28.0, maxlon=38.0, maxlat=0.0)
+STUDY_BBOX = dict(minlon=15.0, minlat=-35.0, maxlon=38.0, maxlat=0.0)
 
 
 def within_africa_study_area(lat: float, lon: float) -> bool:
-    """Return True if coordinates fall within the Africa Copperbelt study bbox."""
+    """Return True if coordinates fall within the Africa study bbox."""
     b = STUDY_BBOX
     return b["minlon"] <= lon <= b["maxlon"] and b["minlat"] <= lat <= b["maxlat"]
 
 
-# Map centre: Zambia Copperbelt (Kitwe / Ndola area)
-REGION_CENTER = {"lat": -13.0, "lon": 28.5}
+def infer_country(lat: float, lon: float) -> str:
+    """Simple bounding-box country assignment for the study region."""
+    if -15 <= lat <= -8  and 22 <= lon <= 34: return "Zambia"
+    if -13 <= lat <= -4  and 18 <= lon <= 31: return "DRC"
+    if -27 <= lat <= -18 and 20 <= lon <= 30: return "Botswana"
+    if -23 <= lat <= -15 and 26 <= lon <= 34: return "Zimbabwe"
+    if -29 <= lat <= -17 and 11 <= lon <= 25: return "Namibia"
+    if -35 <= lat <= -22 and 17 <= lon <= 33: return "South Africa"
+    if -27 <= lat <= -10 and 32 <= lon <= 36: return "Mozambique"
+    return "Africa"
+
+
+# Map centre: Central Africa Copperbelt
+REGION_CENTER = {"lat": -18.0, "lon": 27.0}

@@ -1,8 +1,8 @@
 {
   "best_model": "xgboost",
-  "roc_auc": 0.9147793573291733,
-  "pr_auc": 0.7949010386878198,
-  "n_train": 2065,
+  "roc_auc": 0.8886454503087899,
+  "pr_auc": 0.7854080745440418,
+  "n_train": 2045,
   "n_features": 13,
   "features": [
     "elevation_m",
@@ -21,9 +21,9 @@
   ],
   "region": "Central/Southern Africa Copperbelt",
   "commodity": "Copper \u00b7 Cobalt \u00b7 Nickel",
-  "grid_points": 16100,
+  "grid_points": 20125,
   "score_range": [
-    0.023398471375306446,
+    0.027559978266557057,
     1.0
   ]
 }
