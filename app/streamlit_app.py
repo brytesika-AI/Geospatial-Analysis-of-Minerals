@@ -961,7 +961,8 @@ def render_resource_intelligence(deposits: pd.DataFrame, oil_gas_df: pd.DataFram
         st.markdown("#### Oil & Gas Basins — Sub-Saharan Africa")
 
         if not oil_gas_df.empty:
-            n_prod = int((oil_gas_df.get("status","").str.lower().str.contains("produc", na=False)).sum())
+            status_col = oil_gas_df["status"] if "status" in oil_gas_df.columns else pd.Series(dtype=str)
+            n_prod = int(status_col.astype(str).str.lower().str.contains("produc", na=False).sum())
             n_exp  = len(oil_gas_df) - n_prod
             c1, c2, c3 = st.columns(3)
             c1.metric("Total O&G records", len(oil_gas_df))
