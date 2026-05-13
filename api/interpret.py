@@ -1,31 +1,37 @@
 """GET /api/interpret — LLM geological + ESG + logistics narrative for a target.
-Priority: Groq (LLaMA-3.3-70B) → HuggingFace → rule-based fallback.
+Priority: Cache → OpenAI (gpt-4o-mini) → Claude (Haiku) → Groq → HuggingFace → rule-based.
 
-HuggingFace model is chosen via HF_MODEL env var (default: Mistral-7B-Instruct-v0.3).
-Other good free-tier options:
-  - HuggingFaceH4/zephyr-7b-beta
-  - Qwen/Qwen2.5-7B-Instruct
-  - tiiuae/falcon-7b-instruct
+Cost guide (per unique target click):
+  - OpenAI gpt-4o-mini : ~$0.0005  (set OPENAI_API_KEY)
+  - Claude Haiku       : ~$0.003   (set ANTHROPIC_API_KEY)
+  - Groq               : free       (set GROQ_API_KEY)
+  - HuggingFace        : free       (set HF_API_KEY)
+  - rule-based         : $0         (always available fallback)
+In-memory cache means repeated clicks on the same target cost nothing.
 """
 import sys, os; sys.path.insert(0, os.path.dirname(__file__))
 import json, math, time, urllib.request, urllib.error
 from _utils import BaseHandler, DATA_PROC, DATA_RAW, read_csv, infer_country, score_tier
 
-GROQ_KEY = os.environ.get("GROQ_API_KEY", "")
-HF_KEY   = os.environ.get("HF_API_KEY", "")
+OPENAI_KEY  = os.environ.get("OPENAI_API_KEY", "")
+CLAUDE_KEY  = os.environ.get("ANTHROPIC_API_KEY", "")
+GROQ_KEY    = os.environ.get("GROQ_API_KEY", "")
+HF_KEY      = os.environ.get("HF_API_KEY", "")
 
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-HF_BASE  = "https://router.huggingface.co/hf-inference/models/{model}/v1/chat/completions"
+OPENAI_URL  = "https://api.openai.com/v1/chat/completions"
+CLAUDE_URL  = "https://api.anthropic.com/v1/messages"
+GROQ_URL    = "https://api.groq.com/openai/v1/chat/completions"
+HF_BASE     = "https://router.huggingface.co/hf-inference/models/{model}/v1/chat/completions"
 
-# Groq model order: Gemma first (user preference), LLaMA fallback
-# All free on Groq — get key at console.groq.com (30 seconds)
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
+
 GROQ_MODELS = [
     os.environ.get("GROQ_MODEL", "gemma2-9b-it"),
     "llama-3.3-70b-versatile",
     "llama-3.1-8b-instant",
 ]
 
-# HF fallback: Llama models on HF router (require accepting Meta terms at hf.co)
 HF_MODELS = [
     os.environ.get("HF_MODEL", ""),
     "meta-llama/Llama-3.2-3B-Instruct",
@@ -33,8 +39,15 @@ HF_MODELS = [
 ]
 HF_MODELS = [m for m in HF_MODELS if m]
 
+# In-memory cache — same target (lat/lon rounded to 2dp) costs $0 on repeat clicks
+_CACHE: dict = {}
+
 _GRID  = None
 _DUMPS = None
+
+
+def _cache_key(lat: float, lon: float) -> str:
+    return f"{round(lat, 2)}_{round(lon, 2)}"
 
 
 def _load_grid():
@@ -111,6 +124,41 @@ RECOMMENDATION
 State ADVANCE / HOLD / DROP clearly. Give next 3 actions with a 90-day timeline. State estimated cost to first drill result in USD.
 
 Be specific to {country}. Use geological terminology. Write for a board-level audience — precise, no filler."""
+
+
+def _call_openai(prompt: str) -> tuple[str, str]:
+    payload = json.dumps({
+        "model":       OPENAI_MODEL,
+        "messages":    [{"role": "user", "content": prompt}],
+        "max_tokens":  900,
+        "temperature": 0.35,
+    }).encode()
+    req = urllib.request.Request(
+        OPENAI_URL, data=payload,
+        headers={"Content-Type": "application/json",
+                 "Authorization": f"Bearer {OPENAI_KEY}"},
+    )
+    with urllib.request.urlopen(req, timeout=30) as r:
+        text = json.loads(r.read())["choices"][0]["message"]["content"].strip()
+        return OPENAI_MODEL, text
+
+
+def _call_claude(prompt: str) -> tuple[str, str]:
+    payload = json.dumps({
+        "model":      CLAUDE_MODEL,
+        "max_tokens": 900,
+        "messages":   [{"role": "user", "content": prompt}],
+    }).encode()
+    req = urllib.request.Request(
+        CLAUDE_URL, data=payload,
+        headers={"Content-Type":      "application/json",
+                 "x-api-key":         CLAUDE_KEY,
+                 "anthropic-version":  "2023-06-01"},
+    )
+    with urllib.request.urlopen(req, timeout=35) as r:
+        data = json.loads(r.read())
+        text = data["content"][0]["text"].strip()
+        return CLAUDE_MODEL, text
 
 
 def _call_groq(prompt: str) -> tuple[str, str]:
@@ -256,11 +304,39 @@ class handler(BaseHandler):
         prompt = _build_prompt(lat, lon, score, tier, co_cu, ni_cu, country, features)
         errors = []
 
+        # Serve from cache if available — free on repeat clicks
+        ck = _cache_key(lat, lon)
+        if ck in _CACHE:
+            cached = dict(_CACHE[ck])
+            cached["cached"] = True
+            return cached
+
+        if OPENAI_KEY:
+            try:
+                model_used, text = _call_openai(prompt)
+                result = {"source": f"openai-{model_used}", "sections": _parse_sections(text), "raw": text}
+                _CACHE[ck] = result
+                return result
+            except Exception as e:
+                errors.append(f"openai: {e}")
+
+        if CLAUDE_KEY:
+            try:
+                model_used, text = _call_claude(prompt)
+                label = model_used.split("-")[1] if "-" in model_used else model_used
+                result = {"source": f"claude-{label}", "sections": _parse_sections(text), "raw": text}
+                _CACHE[ck] = result
+                return result
+            except Exception as e:
+                errors.append(f"claude: {e}")
+
         if GROQ_KEY:
             try:
                 model_used, text = _call_groq(prompt)
                 label = model_used.replace("-versatile","").replace("-instant","")
-                return {"source": f"groq-{label}", "sections": _parse_sections(text), "raw": text}
+                result = {"source": f"groq-{label}", "sections": _parse_sections(text), "raw": text}
+                _CACHE[ck] = result
+                return result
             except Exception as e:
                 errors.append(f"groq: {e}")
 
@@ -268,9 +344,13 @@ class handler(BaseHandler):
             try:
                 model_used, text = _call_hf(prompt)
                 label = model_used.split("/")[-1]
-                return {"source": f"huggingface-{label}", "sections": _parse_sections(text), "raw": text}
+                result = {"source": f"huggingface-{label}", "sections": _parse_sections(text), "raw": text}
+                _CACHE[ck] = result
+                return result
             except Exception as e:
                 errors.append(f"hf: {e}")
 
         text = _rule_based(lat, lon, score, tier, co_cu, ni_cu, country)
-        return {"source": "rule-based", "sections": _parse_sections(text), "raw": text, "errors": errors}
+        result = {"source": "rule-based", "sections": _parse_sections(text), "raw": text, "errors": errors}
+        _CACHE[ck] = result
+        return result

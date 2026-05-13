@@ -818,9 +818,12 @@ async function interpretTarget(t) {
 
 function renderPanel(d, t) {
   const s = d.sections || {};
-  const srcLabel = d.source === 'groq-llama3.3' ? '🤖 LLaMA-3.3-70B via Groq'
+  const srcLabel = d.cached ? `⚡ Cached (${d.source})`
+                 : d.source && d.source.startsWith('openai-') ? `🤖 ${d.source.replace('openai-','')} via OpenAI`
+                 : d.source && d.source.startsWith('claude-') ? `🤖 Claude ${d.source.replace('claude-','')} via Anthropic`
+                 : d.source && d.source.startsWith('groq-') ? `🤖 ${d.source.replace('groq-','')} via Groq`
                  : d.source && d.source.startsWith('huggingface-') ? `🤖 ${d.source.replace('huggingface-','')} via HuggingFace`
-                 : '📐 Rule-based (set HF_API_KEY in Vercel for live LLM)';
+                 : '📐 Rule-based fallback';
 
   const sectionHTML = (icon, title, colorVar, key) => {
     const text = s[key] || '';
