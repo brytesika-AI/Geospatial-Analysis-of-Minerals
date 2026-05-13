@@ -16,12 +16,20 @@ HF_KEY   = os.environ.get("HF_API_KEY", "")
 # HuggingFace now uses OpenAI-compatible chat completions endpoint (2024+)
 # Default model: zephyr-7b-beta (free, no gating, good instruction following)
 # Alternatives: mistralai/Mistral-7B-Instruct-v0.3, Qwen/Qwen2.5-7B-Instruct
-HF_MODEL = os.environ.get("HF_MODEL", "HuggingFaceH4/zephyr-7b-beta")
+HF_MODEL = os.environ.get("HF_MODEL", "")  # override via env if needed
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-# HuggingFace router (2025) — OpenAI-compatible chat endpoint
-# Returns 401 without key (correct), 404 was old api-inference.huggingface.co
-HF_URL   = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL}/v1/chat/completions"
+HF_BASE  = "https://router.huggingface.co/hf-inference/models/{model}/v1/chat/completions"
+
+# Models tried in order — all confirmed reachable on hf-inference router
+HF_MODELS = [
+    HF_MODEL,                                    # user override (if set)
+    "mistralai/Mistral-7B-Instruct-v0.3",
+    "microsoft/Phi-3.5-mini-instruct",
+    "Qwen/Qwen2.5-7B-Instruct",
+    "google/gemma-2-2b-it",
+]
+HF_MODELS = [m for m in HF_MODELS if m]         # drop blanks
 
 _GRID  = None
 _DUMPS = None
@@ -119,35 +127,42 @@ def _call_groq(prompt: str) -> str:
         return json.loads(r.read())["choices"][0]["message"]["content"].strip()
 
 
-def _call_hf(prompt: str, retries: int = 2) -> str:
-    # HF router uses OpenAI-compatible chat format
+def _call_hf_model(model: str, prompt: str) -> str:
+    url     = HF_BASE.format(model=model)
     payload = json.dumps({
-        "model":    HF_MODEL,
-        "messages": [{"role": "user", "content": prompt}],
+        "model":       model,
+        "messages":    [{"role": "user", "content": prompt}],
         "max_tokens":  900,
         "temperature": 0.35,
         "stream":      False,
     }).encode()
+    req = urllib.request.Request(
+        url, data=payload,
+        headers={"Content-Type": "application/json",
+                 "Authorization": f"Bearer {HF_KEY}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=55) as r:
+            data = json.loads(r.read())
+            if "choices" in data:
+                return model, data["choices"][0]["message"]["content"].strip()
+            raise ValueError(str(data)[:200])
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="ignore")
+        raise ValueError(f"HTTP {e.code}: {body[:150]}")
 
-    for attempt in range(retries + 1):
-        req = urllib.request.Request(
-            HF_URL, data=payload,
-            headers={"Content-Type": "application/json",
-                     "Authorization": f"Bearer {HF_KEY}"},
-        )
+
+def _call_hf(prompt: str) -> tuple[str, str]:
+    last_err = "No HF models configured"
+    for model in HF_MODELS:
         try:
-            with urllib.request.urlopen(req, timeout=55) as r:
-                data = json.loads(r.read())
-                if "choices" in data:
-                    return data["choices"][0]["message"]["content"].strip()
-                raise ValueError(f"Unexpected HF response: {str(data)[:200]}")
-        except urllib.error.HTTPError as e:
-            body = e.read().decode("utf-8", errors="ignore")
-            if e.code == 503 and attempt < retries:
-                time.sleep(20)
-                continue
-            raise ValueError(f"HF HTTP {e.code}: {body[:200]}")
-    raise RuntimeError("HuggingFace inference failed after retries")
+            return _call_hf_model(model, prompt)
+        except ValueError as e:
+            last_err = f"{model}: {e}"
+            if "503" in str(e):
+                time.sleep(15)
+            continue
+    raise RuntimeError(f"All HF models failed. Last: {last_err}")
 
 
 def _rule_based(lat, lon, score, tier, co_cu, ni_cu, country):
@@ -237,8 +252,9 @@ class handler(BaseHandler):
 
         if HF_KEY:
             try:
-                text = _call_hf(prompt)
-                return {"source": "huggingface-mistral7b", "sections": _parse_sections(text), "raw": text}
+                model_used, text = _call_hf(prompt)
+                label = model_used.split("/")[-1]
+                return {"source": f"huggingface-{label}", "sections": _parse_sections(text), "raw": text}
             except Exception as e:
                 errors.append(f"hf: {e}")
 
