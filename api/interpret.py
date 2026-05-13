@@ -1,27 +1,44 @@
 """GET /api/interpret — LLM geological + ESG + logistics narrative for a target.
-Priority: Cache → OpenAI (gpt-4o-mini) → Claude (Haiku) → Groq → HuggingFace → rule-based.
+Priority: Cache → GitHub Models → Cloudflare AI → OpenAI → Claude → Groq → HF → rule-based.
 
-Cost guide (per unique target click):
-  - OpenAI gpt-4o-mini : ~$0.0005  (set OPENAI_API_KEY)
-  - Claude Haiku       : ~$0.003   (set ANTHROPIC_API_KEY)
-  - Groq               : free       (set GROQ_API_KEY)
-  - HuggingFace        : free       (set HF_API_KEY)
-  - rule-based         : $0         (always available fallback)
-In-memory cache means repeated clicks on the same target cost nothing.
+Free options (set these in Vercel env vars — no credit card needed):
+  - GITHUB_TOKEN      : GitHub PAT (github.com → Settings → Developer settings → PAT)
+                        Free: 150 req/day, GPT-4o-mini quality
+  - CF_API_TOKEN +    : Cloudflare API token + Account ID
+    CF_ACCOUNT_ID       Free: ~10,000 neurons/day ≈ 1,000 requests, Llama-3.1-8B
+
+Paid fallbacks (optional, only used if free providers fail):
+  - OPENAI_API_KEY    : ~$0.0005/request (gpt-4o-mini)
+  - ANTHROPIC_API_KEY : ~$0.003/request  (claude-haiku)
+
+In-memory cache means repeated clicks on the same target cost $0.
 """
 import sys, os; sys.path.insert(0, os.path.dirname(__file__))
 import json, math, time, urllib.request, urllib.error
 from _utils import BaseHandler, DATA_PROC, DATA_RAW, read_csv, infer_country, score_tier
 
+# Free providers
+GITHUB_TOKEN  = os.environ.get("GITHUB_TOKEN", "")
+CF_API_TOKEN  = os.environ.get("CF_API_TOKEN", "")
+CF_ACCOUNT_ID = os.environ.get("CF_ACCOUNT_ID", "")
+
+# Paid fallbacks
 OPENAI_KEY  = os.environ.get("OPENAI_API_KEY", "")
 CLAUDE_KEY  = os.environ.get("ANTHROPIC_API_KEY", "")
 GROQ_KEY    = os.environ.get("GROQ_API_KEY", "")
 HF_KEY      = os.environ.get("HF_API_KEY", "")
 
-OPENAI_URL  = "https://api.openai.com/v1/chat/completions"
-CLAUDE_URL  = "https://api.anthropic.com/v1/messages"
-GROQ_URL    = "https://api.groq.com/openai/v1/chat/completions"
-HF_BASE     = "https://router.huggingface.co/hf-inference/models/{model}/v1/chat/completions"
+# GitHub Models — same OpenAI-compatible format, just different base URL + PAT auth
+GITHUB_URL   = "https://models.inference.ai.azure.com/chat/completions"
+GITHUB_MODEL = os.environ.get("GITHUB_MODEL", "gpt-4o-mini")
+
+# Cloudflare Workers AI — free 10k neurons/day
+CF_MODEL = os.environ.get("CF_MODEL", "@cf/meta/llama-3.1-8b-instruct")
+
+OPENAI_URL   = "https://api.openai.com/v1/chat/completions"
+CLAUDE_URL   = "https://api.anthropic.com/v1/messages"
+GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
+HF_BASE      = "https://router.huggingface.co/hf-inference/models/{model}/v1/chat/completions"
 
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
@@ -124,6 +141,45 @@ RECOMMENDATION
 State ADVANCE / HOLD / DROP clearly. Give next 3 actions with a 90-day timeline. State estimated cost to first drill result in USD.
 
 Be specific to {country}. Use geological terminology. Write for a board-level audience — precise, no filler."""
+
+
+def _call_github(prompt: str) -> tuple[str, str]:
+    """GitHub Models — free tier, OpenAI-compatible, uses GitHub PAT."""
+    payload = json.dumps({
+        "model":       GITHUB_MODEL,
+        "messages":    [{"role": "user", "content": prompt}],
+        "max_tokens":  900,
+        "temperature": 0.35,
+    }).encode()
+    req = urllib.request.Request(
+        GITHUB_URL, data=payload,
+        headers={"Content-Type": "application/json",
+                 "Authorization": f"Bearer {GITHUB_TOKEN}"},
+    )
+    with urllib.request.urlopen(req, timeout=30) as r:
+        text = json.loads(r.read())["choices"][0]["message"]["content"].strip()
+        return GITHUB_MODEL, text
+
+
+def _call_cloudflare(prompt: str) -> tuple[str, str]:
+    """Cloudflare Workers AI — free 10k neurons/day, Llama-3.1-8B."""
+    url = f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/ai/run/{CF_MODEL}"
+    payload = json.dumps({
+        "messages":   [{"role": "user", "content": prompt}],
+        "max_tokens": 900,
+    }).encode()
+    req = urllib.request.Request(
+        url, data=payload,
+        headers={"Content-Type":  "application/json",
+                 "Authorization": f"Bearer {CF_API_TOKEN}"},
+    )
+    with urllib.request.urlopen(req, timeout=45) as r:
+        data = json.loads(r.read())
+        # CF returns {"result": {"response": "..."}, "success": true}
+        if not data.get("success"):
+            raise ValueError(str(data.get("errors", data))[:200])
+        text = data["result"]["response"].strip()
+        return CF_MODEL, text
 
 
 def _call_openai(prompt: str) -> tuple[str, str]:
@@ -310,6 +366,26 @@ class handler(BaseHandler):
             cached = dict(_CACHE[ck])
             cached["cached"] = True
             return cached
+
+        if GITHUB_TOKEN:
+            try:
+                model_used, text = _call_github(prompt)
+                label = model_used.replace("gpt-4o-mini", "GPT-4o-mini")
+                result = {"source": f"github-{label}", "sections": _parse_sections(text), "raw": text}
+                _CACHE[ck] = result
+                return result
+            except Exception as e:
+                errors.append(f"github: {e}")
+
+        if CF_API_TOKEN and CF_ACCOUNT_ID:
+            try:
+                model_used, text = _call_cloudflare(prompt)
+                label = model_used.split("/")[-1]
+                result = {"source": f"cloudflare-{label}", "sections": _parse_sections(text), "raw": text}
+                _CACHE[ck] = result
+                return result
+            except Exception as e:
+                errors.append(f"cloudflare: {e}")
 
         if OPENAI_KEY:
             try:

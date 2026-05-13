@@ -819,6 +819,8 @@ async function interpretTarget(t) {
 function renderPanel(d, t) {
   const s = d.sections || {};
   const srcLabel = d.cached ? `⚡ Cached (${d.source})`
+                 : d.source && d.source.startsWith('github-') ? `🤖 ${d.source.replace('github-','')} via GitHub Models (free)`
+                 : d.source && d.source.startsWith('cloudflare-') ? `🤖 ${d.source.replace('cloudflare-','')} via Cloudflare AI (free)`
                  : d.source && d.source.startsWith('openai-') ? `🤖 ${d.source.replace('openai-','')} via OpenAI`
                  : d.source && d.source.startsWith('claude-') ? `🤖 Claude ${d.source.replace('claude-','')} via Anthropic`
                  : d.source && d.source.startsWith('groq-') ? `🤖 ${d.source.replace('groq-','')} via Groq`
