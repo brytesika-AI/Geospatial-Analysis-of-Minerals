@@ -213,19 +213,22 @@ def load_predictions() -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def load_deposits() -> pd.DataFrame:
-    try:
-        import geopandas as gpd
-    except ImportError:
-        return pd.DataFrame(columns=["lon", "lat", "name", "commod1"])
+    """Load mineral deposits from GeoJSON using pure Python json module."""
+    import json
     path = ROOT / "data" / "raw" / "mrds_africa_copper.geojson"
     if not path.exists():
         return pd.DataFrame(columns=["lon", "lat", "name", "commod1"])
     try:
-        gdf = gpd.read_file(path)
-        gdf["lon"] = gdf.geometry.x
-        gdf["lat"] = gdf.geometry.y
-        cols = ["lon", "lat"] + [c for c in gdf.columns if c not in ("lon","lat","geometry")]
-        return pd.DataFrame(gdf[cols])
+        with open(path, encoding="utf-8") as f:
+            gj = json.load(f)
+        rows = []
+        for feat in gj.get("features", []):
+            geom = feat.get("geometry") or {}
+            props = feat.get("properties") or {}
+            if geom.get("type") == "Point":
+                coords = geom.get("coordinates", [None, None])
+                rows.append({"lon": coords[0], "lat": coords[1], **props})
+        return pd.DataFrame(rows) if rows else pd.DataFrame(columns=["lon","lat","name","commod1"])
     except Exception:
         return pd.DataFrame(columns=["lon", "lat", "name", "commod1"])
 
@@ -254,27 +257,32 @@ def load_oil_gas() -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def load_railways() -> pd.DataFrame:
-    """Returns list of [lat,lon] polylines for railway rendering."""
+    """Load railway polylines from GeoJSON using pure Python json module."""
+    import json
     path = ROOT / "data" / "raw" / "railways_africa.geojson"
     if not path.exists():
-        return pd.DataFrame(columns=["coords","name"])
+        return pd.DataFrame(columns=["coords", "name"])
     try:
-        import geopandas as gpd
-        gdf = gpd.read_file(path)
+        with open(path, encoding="utf-8") as f:
+            gj = json.load(f)
         rows = []
-        for _, row in gdf.iterrows():
-            if row.geometry is None:
-                continue
-            if row.geometry.geom_type == "LineString":
-                coords = [[y, x] for x, y in row.geometry.coords]
-                rows.append({"coords": coords, "name": row.get("name","Railway")})
-            elif row.geometry.geom_type == "MultiLineString":
-                for line in row.geometry.geoms:
-                    coords = [[y, x] for x, y in line.coords]
-                    rows.append({"coords": coords, "name": row.get("name","Railway")})
+        for feat in gj.get("features", []):
+            geom  = feat.get("geometry") or {}
+            props = feat.get("properties") or {}
+            name  = props.get("name", "Railway") or "Railway"
+            gtype = geom.get("type","")
+            if gtype == "LineString":
+                coords = [[c[1], c[0]] for c in geom.get("coordinates", [])]
+                if len(coords) >= 2:
+                    rows.append({"coords": coords, "name": name})
+            elif gtype == "MultiLineString":
+                for line in geom.get("coordinates", []):
+                    coords = [[c[1], c[0]] for c in line]
+                    if len(coords) >= 2:
+                        rows.append({"coords": coords, "name": name})
         return pd.DataFrame(rows) if rows else pd.DataFrame(columns=["coords","name"])
     except Exception:
-        return pd.DataFrame(columns=["coords","name"])
+        return pd.DataFrame(columns=["coords", "name"])
 
 
 @st.cache_data(show_spinner=False)
