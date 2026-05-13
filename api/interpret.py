@@ -19,8 +19,8 @@ HF_KEY   = os.environ.get("HF_API_KEY", "")
 HF_MODEL = os.environ.get("HF_MODEL", "HuggingFaceH4/zephyr-7b-beta")
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-# Per-model chat endpoint — correct format for HF Inference API (2024+)
-HF_URL   = f"https://api-inference.huggingface.co/models/{HF_MODEL}/v1/chat/completions"
+# Free-tier HF Inference API — plain text-generation endpoint (no /v1/chat path)
+HF_URL   = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
 
 _GRID  = None
 _DUMPS = None
@@ -119,13 +119,24 @@ def _call_groq(prompt: str) -> str:
 
 
 def _call_hf(prompt: str, retries: int = 2) -> str:
-    # HuggingFace OpenAI-compatible chat completions API (2024+)
+    # Free-tier HF Inference API: plain text-generation (inputs format)
+    # Zephyr chat template wrapping for best instruction following
+    if "zephyr" in HF_MODEL.lower():
+        formatted = f"<|system|>\nYou are a senior economic geologist and ESG strategist.<|endoftext|>\n<|user|>\n{prompt}<|endoftext|>\n<|assistant|>\n"
+    elif "mistral" in HF_MODEL.lower():
+        formatted = f"<s>[INST]{prompt}[/INST]"
+    else:
+        formatted = prompt
+
     payload = json.dumps({
-        "model":    HF_MODEL,
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens":  900,
-        "temperature": 0.35,
-        "stream":      False,
+        "inputs": formatted,
+        "parameters": {
+            "max_new_tokens":  900,
+            "temperature":     0.35,
+            "return_full_text": False,
+            "do_sample":       True,
+        },
+        "options": {"wait_for_model": True},
     }).encode()
 
     for attempt in range(retries + 1):
@@ -137,14 +148,13 @@ def _call_hf(prompt: str, retries: int = 2) -> str:
         try:
             with urllib.request.urlopen(req, timeout=55) as r:
                 data = json.loads(r.read())
-                # OpenAI-style response
-                if "choices" in data:
-                    return data["choices"][0]["message"]["content"].strip()
-                # Fallback: legacy text generation format
                 if isinstance(data, list):
                     return data[0].get("generated_text", "").strip()
-                err = data.get("error", "Unknown HF error")
-                raise ValueError(err)
+                if isinstance(data, dict):
+                    if "error" in data:
+                        raise ValueError(data["error"])
+                    return data.get("generated_text", "").strip()
+                raise ValueError(f"Unexpected HF response: {str(data)[:100]}")
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", errors="ignore")
             if e.code == 503 and attempt < retries:
