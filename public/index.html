@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GeoExplorer AI | Sub-Saharan Africa Resource Intelligence</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+<!-- Leaflet -->
+<link  rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+<!-- Charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+/* ── Reset & base ───────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c1420;--panel:#162032;--panel2:#1c2b40;--border:#1e3a5f;
+  --text:#e2e8f0;--muted:#94a3b8;--gold:#f59e0b;--gold-lt:#fcd34d;
+  --blue:#60a5fa;--green:#34d399;--red:#f87171;--teal:#2dd4bf;
+  --purple:#a78bfa;--orange:#fb923c;
+  --font:'Inter',system-ui,sans-serif;
+  --radius:8px;--sidebar:280px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5}
+a{color:var(--gold);text-decoration:none}
+button{cursor:pointer;font-family:var(--font)}
+
+/* ── Layout ─────────────────────────────────────────────────────── */
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+#topbar{
+  display:flex;align-items:center;gap:16px;
+  background:#09101c;border-bottom:1px solid var(--border);
+  padding:0 20px;height:56px;flex-shrink:0;z-index:100;
+}
+#topbar .logo{font-size:1.1rem;font-weight:800;color:var(--gold);white-space:nowrap}
+#topbar .logo span{color:var(--text);font-weight:400;font-size:0.8rem;margin-left:6px}
+#nav{display:flex;gap:2px;flex:1;overflow-x:auto}
+.nav-btn{
+  background:none;border:none;color:var(--muted);
+  padding:6px 14px;border-radius:6px;font-size:0.8rem;font-weight:600;
+  letter-spacing:0.04em;white-space:nowrap;transition:all .15s;
+}
+.nav-btn:hover{background:var(--panel2);color:var(--text)}
+.nav-btn.active{background:var(--panel2);color:var(--gold);border-bottom:2px solid var(--gold)}
+.badge{
+  background:var(--gold);color:#0c1420;border-radius:4px;
+  padding:2px 6px;font-size:0.65rem;font-weight:800;margin-left:4px;
+}
+#body{display:flex;flex:1;overflow:hidden}
+
+/* ── Sidebar ────────────────────────────────────────────────────── */
+#sidebar{
+  width:var(--sidebar);flex-shrink:0;
+  background:#0a1624;border-right:1px solid var(--border);
+  overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px;
+}
+.sidebar-section{border-top:1px solid var(--border);padding-top:14px}
+.sidebar-section:first-child{border-top:none;padding-top:0}
+.sidebar-label{font-size:0.7rem;font-weight:700;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
+.chip-group{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  padding:4px 10px;border-radius:20px;border:1px solid var(--border);
+  background:var(--panel2);color:var(--muted);font-size:0.72rem;font-weight:600;
+  cursor:pointer;transition:all .15s;
+}
+.chip.active{background:var(--gold);color:#0c1420;border-color:var(--gold)}
+.chip:hover:not(.active){border-color:var(--gold);color:var(--gold)}
+.score-range{display:flex;flex-direction:column;gap:6px}
+.range-labels{display:flex;justify-content:space-between;font-size:0.7rem;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--gold);height:4px}
+.point-query input{
+  width:100%;background:var(--panel2);border:1px solid var(--border);
+  border-radius:6px;color:var(--text);padding:7px 10px;font-size:0.82rem;
+  font-family:var(--font);margin-bottom:6px;
+}
+.point-query input:focus{outline:none;border-color:var(--gold)}
+.btn-primary{
+  width:100%;background:var(--gold);color:#0c1420;border:none;
+  border-radius:6px;padding:9px;font-weight:700;font-size:0.84rem;
+  letter-spacing:0.03em;transition:background .15s;
+}
+.btn-primary:hover{background:var(--gold-lt)}
+.model-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  padding:12px;font-size:0.8rem;line-height:1.6;
+}
+.model-card .val{color:var(--gold);font-weight:700}
+.attrib{font-size:0.68rem;color:var(--muted);line-height:1.45;margin-top:4px}
+
+/* ── Main content ───────────────────────────────────────────────── */
+#main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.tab-content{display:none;flex:1;overflow:auto;padding:20px}
+.tab-content.active{display:flex;flex-direction:column;gap:20px}
+
+/* ── KPI strip ──────────────────────────────────────────────────── */
+.kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.kpi .label{font-size:0.65rem;font-weight:700;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase}
+.kpi .value{font-size:1.6rem;font-weight:800;color:var(--gold);margin:4px 0 0}
+.kpi .sub{font-size:0.7rem;color:var(--muted)}
+
+/* ── Cards grid ─────────────────────────────────────────────────── */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.card-title{font-size:0.78rem;font-weight:700;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px}
+.card canvas{max-height:220px}
+
+/* ── Map ────────────────────────────────────────────────────────── */
+#map-container{position:relative;flex:1;min-height:0}
+#map{width:100%;height:100%;min-height:500px}
+#map-controls{
+  position:absolute;top:12px;right:12px;z-index:1000;
+  background:rgba(12,20,32,.92);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px 14px;min-width:180px;
+}
+#map-controls .ctrl-title{font-size:0.7rem;font-weight:700;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px}
+.ctrl-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;cursor:pointer}
+.ctrl-row input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:pointer}
+.ctrl-row label{font-size:0.78rem;color:var(--text);cursor:pointer}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+#score-tooltip{
+  position:absolute;bottom:20px;left:20px;z-index:1000;
+  background:rgba(12,20,32,.95);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px 14px;min-width:200px;display:none;
+}
+#score-tooltip .t-score{font-size:1.4rem;font-weight:800;color:var(--gold)}
+.tier-badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:0.72rem;font-weight:700}
+.tier-VH{background:#f87171;color:#fff}
+.tier-H {background:#f59e0b;color:#0c1420}
+.tier-M {background:#60a5fa;color:#0c1420}
+.tier-L {background:#475569;color:#e2e8f0}
+
+/* ── Data table ─────────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:0.78rem}
+thead{background:var(--panel2);position:sticky;top:0;z-index:1}
+th{padding:10px 12px;text-align:left;font-weight:700;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;font-size:0.65rem;white-space:nowrap}
+td{padding:9px 12px;border-top:1px solid var(--border);color:var(--text)}
+tr:hover td{background:rgba(255,255,255,.02)}
+.score-cell{font-weight:700;color:var(--gold)}
+.decision-adv{color:var(--green);font-weight:700}
+.decision-hold{color:var(--muted)}
+
+/* ── Architecture ───────────────────────────────────────────────── */
+.arch-section{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+.arch-section h2{font-size:1.1rem;font-weight:800;margin-bottom:6px;color:var(--text)}
+.arch-section h3{font-size:0.88rem;font-weight:700;color:var(--gold);margin:16px 0 6px}
+.arch-section p,.arch-section li{color:var(--muted);line-height:1.65;font-size:0.84rem}
+.arch-section ul{padding-left:18px;margin-top:4px}
+.arch-section li{margin-bottom:3px}
+.pipeline{display:flex;flex-wrap:wrap;gap:0;margin:16px 0}
+.pipe-step{
+  background:var(--panel2);border:1px solid var(--border);border-radius:6px;
+  padding:12px 16px;flex:1;min-width:160px;position:relative;
+}
+.pipe-step::after{
+  content:'→';position:absolute;right:-14px;top:50%;transform:translateY(-50%);
+  color:var(--gold);font-weight:800;z-index:1;font-size:1rem;
+}
+.pipe-step:last-child::after{display:none}
+.pipe-step .num{color:var(--gold);font-size:0.65rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase}
+.pipe-step .title{font-weight:700;font-size:0.82rem;margin:3px 0}
+.pipe-step .desc{font-size:0.72rem;color:var(--muted)}
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px}
+.tech-card{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:12px}
+.tech-card .cat{font-size:0.65rem;font-weight:700;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px}
+.tech-card ul{padding-left:14px}
+.tech-card li{font-size:0.76rem;color:var(--muted);margin-bottom:2px}
+
+/* ── Info box ───────────────────────────────────────────────────── */
+.info-box{background:var(--panel);border-left:3px solid var(--blue);border-radius:0 6px 6px 0;padding:10px 14px;color:var(--muted);font-size:0.82rem}
+.warn-box{background:var(--panel);border-left:3px solid var(--gold);border-radius:0 6px 6px 0;padding:10px 14px;color:var(--muted);font-size:0.82rem}
+
+/* ── Page title ─────────────────────────────────────────────────── */
+.page-header{margin-bottom:4px}
+.page-eyebrow{font-size:0.65rem;font-weight:700;color:var(--gold);letter-spacing:0.14em;text-transform:uppercase}
+.page-title{font-size:1.6rem;font-weight:800;line-height:1.15;margin:4px 0 8px}
+.page-sub{color:var(--muted);font-size:0.84rem;max-width:820px;line-height:1.55}
+
+/* ── CSV download btn ───────────────────────────────────────────── */
+.btn-outline{
+  background:var(--panel2);color:var(--text);border:1px solid var(--border);
+  border-radius:6px;padding:6px 14px;font-size:0.78rem;font-weight:600;
+  transition:all .15s;
+}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── Spinner ────────────────────────────────────────────────────── */
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-overlay{
+  position:fixed;inset:0;background:rgba(12,20,32,.85);z-index:9999;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;
+}
+#loading-overlay .msg{color:var(--text);font-weight:600;font-size:0.9rem}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ── Top bar ── -->
+<div id="topbar">
+  <div class="logo">⛏ GeoExplorer AI <span>Sub-Saharan Africa</span></div>
+  <nav id="nav">
+    <button class="nav-btn active" onclick="showTab('map')">🗺 Map</button>
+    <button class="nav-btn" onclick="showTab('dashboard')">📊 Dashboard</button>
+    <button class="nav-btn" onclick="showTab('targets')">🎯 Targets</button>
+    <button class="nav-btn" onclick="showTab('resources')">🔋 Resources</button>
+    <button class="nav-btn" onclick="showTab('drill')">⛏ Drill Program</button>
+    <button class="nav-btn" onclick="showTab('arch')">🏗 Architecture</button>
+  </nav>
+  <div style="font-size:0.72rem;color:var(--muted);white-space:nowrap">
+    ROC-AUC <span id="hdr-auc" style="color:var(--gold);font-weight:700">0.889</span>
+    · <span id="hdr-cells" style="color:var(--gold);font-weight:700">20,125</span> grid cells
+  </div>
+</div>
+
+<div id="body">
+
+<!-- ── Sidebar ── -->
+<div id="sidebar">
+  <div>
+    <div class="sidebar-label">Global Filters</div>
+
+    <div style="margin-bottom:12px">
+      <div class="sidebar-label">Country / Territory</div>
+      <div class="chip-group" id="country-chips"></div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <div class="sidebar-label">Prospectivity Tier</div>
+      <div class="chip-group">
+        <div class="chip active" data-tier="Very High" onclick="toggleTier(this)">Very High</div>
+        <div class="chip active" data-tier="High"      onclick="toggleTier(this)">High</div>
+        <div class="chip active" data-tier="Moderate"  onclick="toggleTier(this)">Moderate</div>
+        <div class="chip"        data-tier="Low"       onclick="toggleTier(this)">Low</div>
+      </div>
+    </div>
+
+    <div class="score-range" style="margin-bottom:16px">
+      <div class="sidebar-label">Score range</div>
+      <input type="range" id="score-min" min="0" max="1" step="0.05" value="0.3" oninput="updateScoreRange()"/>
+      <input type="range" id="score-max" min="0" max="1" step="0.05" value="1.0" oninput="updateScoreRange()"/>
+      <div class="range-labels"><span id="score-min-lbl">0.30</span><span id="score-max-lbl">1.00</span></div>
+    </div>
+
+    <button class="btn-primary" onclick="applyFilters()">Apply Filters</button>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Query Location</div>
+    <div class="point-query">
+      <input type="number" id="q-lat" placeholder="Latitude (°S negative)" value="-12.5" step="0.0001" />
+      <input type="number" id="q-lon" placeholder="Longitude (°E)"          value="28.2"  step="0.0001" />
+      <button class="btn-primary" onclick="scorePoint()">Score Location</button>
+    </div>
+    <div id="score-result" style="margin-top:10px;display:none"></div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Model Snapshot</div>
+    <div class="model-card" id="model-card">
+      <div>XGBoost · Spatial 5-fold CV</div>
+      <div>ROC-AUC <span class="val" id="mc-auc">0.889</span></div>
+      <div>PR-AUC <span class="val" id="mc-prauc">0.785</span></div>
+      <div><span class="val" id="mc-train">2,045</span> training samples</div>
+      <div><span class="val" id="mc-grid">20,125</span> scored grid cells</div>
+      <div style="color:var(--gold);margin-top:4px" id="mc-commodity">Cu · Co · Ni</div>
+    </div>
+    <div class="attrib">USGS MRDS · GEM Active Faults · Natural Earth · OSM mines.<br>Not a resource estimate.</div>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<div id="main">
+
+  <!-- MAP TAB -->
+  <div id="tab-map" class="tab-content active" style="padding:0;position:relative">
+    <div id="map-container" style="flex:1;position:relative">
+      <div id="map"></div>
+      <div id="map-controls">
+        <div class="ctrl-title">Map Layers</div>
+        <div class="ctrl-row"><input type="checkbox" id="lyr-heat" checked onchange="toggleLayer('heat')"><div class="dot" style="background:#f59e0b"></div><label for="lyr-heat">Prospectivity</label></div>
+        <div class="ctrl-row"><input type="checkbox" id="lyr-deps" checked onchange="toggleLayer('deps')"><div class="dot" style="background:#34d399"></div><label for="lyr-deps">Cu·Co·Ni Deposits</label></div>
+        <div class="ctrl-row"><input type="checkbox" id="lyr-oilgas" checked onchange="toggleLayer('oilgas')"><div class="dot" style="background:#fbbf24"></div><label for="lyr-oilgas">Oil &amp; Gas</label></div>
+        <div class="ctrl-row"><input type="checkbox" id="lyr-cities" checked onchange="toggleLayer('cities')"><div class="dot" style="background:#e2e8f0"></div><label for="lyr-cities">Cities</label></div>
+        <div class="ctrl-row"><input type="checkbox" id="lyr-ports" onchange="toggleLayer('ports')"><div class="dot" style="background:#60a5fa"></div><label for="lyr-ports">Seaports</label></div>
+        <div class="ctrl-row"><input type="checkbox" id="lyr-rails" onchange="toggleLayer('rails')"><div class="dot" style="background:#475569"></div><label for="lyr-rails">Railways</label></div>
+      </div>
+      <div id="score-tooltip">
+        <div class="t-score" id="tt-score">—</div>
+        <div id="tt-tier" style="margin:4px 0 6px"></div>
+        <div style="font-size:0.75rem;color:var(--muted)">Co/Cu: <span id="tt-cocu">—</span></div>
+        <div style="font-size:0.75rem;color:var(--muted)">Country: <span id="tt-country">—</span></div>
+        <div style="font-size:0.75rem;color:var(--muted)">Nearest: <span id="tt-dist">—</span> km</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD TAB -->
+  <div id="tab-dashboard" class="tab-content">
+    <div class="page-header">
+      <div class="page-eyebrow">AI-Assisted Exploration · Africa</div>
+      <h1 class="page-title">Executive Dashboard</h1>
+      <p class="page-sub">Portfolio summary, tier distribution and target prioritisation matrix for the Cu · Co · Ni · Green Metals screening programme across Sub-Saharan Africa.</p>
+    </div>
+    <div class="kpi-strip" id="kpi-strip">
+      <div class="kpi"><div class="label">Grid Cells</div><div class="value" id="kpi-total">—</div><div class="sub">Scored locations</div></div>
+      <div class="kpi"><div class="label">Very High</div><div class="value" id="kpi-vh" style="color:#f87171">—</div><div class="sub">Score ≥ 0.70</div></div>
+      <div class="kpi"><div class="label">High</div><div class="value" id="kpi-hi">—</div><div class="sub">Score 0.50–0.70</div></div>
+      <div class="kpi"><div class="label">ROC-AUC</div><div class="value" id="kpi-auc">—</div><div class="sub">Spatial CV</div></div>
+      <div class="kpi"><div class="label">Training Samples</div><div class="value" id="kpi-train">—</div><div class="sub">Labelled deposits</div></div>
+    </div>
+    <div class="cards-grid">
+      <div class="card"><div class="card-title">Portfolio by Tier</div><canvas id="chart-tier"></canvas></div>
+      <div class="card"><div class="card-title">Feature Importance</div><canvas id="chart-fi"></canvas></div>
+      <div class="card"><div class="card-title">Score Distribution</div><canvas id="chart-hist"></canvas></div>
+      <div class="card"><div class="card-title">Coverage by Country</div><canvas id="chart-country"></canvas></div>
+    </div>
+    <div class="warn-box">
+      <strong>Mineral system diagnostics:</strong>
+      Co/Cu ratio ≥ 10% → DRC Katanga-style SHSC Cu-Co mineralisation (Cailteux et al. 2005).
+      Ni/Cu ≥ 20% → Bushveld magmatic sulphide (South Africa).
+      Score ≥ 0.70 + low uncertainty → priority drilling candidate.
+    </div>
+  </div>
+
+  <!-- TARGETS TAB -->
+  <div id="tab-targets" class="tab-content">
+    <div class="page-header">
+      <div class="page-eyebrow">ML-Ranked · Cu · Co · Ni</div>
+      <h1 class="page-title">Priority Targets</h1>
+      <p class="page-sub">Top prospectivity targets with Co/Cu diagnostic ratios, geological uncertainty, recommended field programme and budget estimate.</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn-outline" id="dl-targets" onclick="downloadCSV('targets')">⬇ Export CSV</button>
+      <span style="color:var(--muted);font-size:0.78rem" id="targets-count"></span>
+    </div>
+    <div class="table-wrap">
+      <table id="targets-table">
+        <thead><tr>
+          <th>ID</th><th>Country</th><th>Lat</th><th>Lon</th>
+          <th>Score</th><th>Tier</th><th>Co/Cu %</th><th>Ni/Cu %</th>
+          <th>Uncertainty</th><th>Est. Cost</th><th>Decision</th><th>Program</th>
+        </tr></thead>
+        <tbody id="targets-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RESOURCES TAB -->
+  <div id="tab-resources" class="tab-content">
+    <div class="page-header">
+      <div class="page-eyebrow">Critical Minerals · Energy Transition</div>
+      <h1 class="page-title">Resource Intelligence</h1>
+      <p class="page-sub">Green critical metals (Li · Mn · REE · Graphite · V) and Sub-Saharan Africa oil &amp; gas basin overview — complementing the Cu·Co·Ni prospectivity model.</p>
+    </div>
+    <div class="cards-grid" style="grid-template-columns:1fr">
+      <div class="card">
+        <div class="card-title">🔋 Green &amp; Critical Metal Deposits</div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Country</th><th>District</th><th>Metal</th><th>Style</th><th>Status</th><th>Notes</th></tr></thead>
+          <tbody id="green-body"></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🛢 Oil &amp; Gas Basins</div>
+        <div class="table-wrap">
+          <table id="og-table"><thead><tr><th>Country</th><th>Field / Basin</th><th>Type</th><th>Status</th></tr></thead>
+          <tbody id="og-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRILL PROGRAM TAB -->
+  <div id="tab-drill" class="tab-content">
+    <div class="page-header">
+      <div class="page-eyebrow">Field-Ready · WGS84</div>
+      <h1 class="page-title">Drill Program Generator</h1>
+      <p class="page-sub">GPS-precise coordinates, drilling method, depth, indicative budget and permit authority for each priority target. Export for field use.</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn-outline" onclick="downloadCSV('drill')">⬇ Export Drill Sheet (CSV)</button>
+    </div>
+    <div class="table-wrap">
+      <table id="drill-table">
+        <thead><tr>
+          <th>Target ID</th><th>Country</th><th>Lat (DD)</th><th>Lon (DD)</th>
+          <th>Lat (DMS)</th><th>Lon (DMS)</th>
+          <th>Score</th><th>Method</th><th>Depth</th><th>Est. Cost</th><th>Permit Authority</th>
+        </tr></thead>
+        <tbody id="drill-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE TAB -->
+  <div id="tab-arch" class="tab-content">
+    <div class="page-header">
+      <div class="page-eyebrow">Technical Architecture · Data Science · AI</div>
+      <h1 class="page-title">System Architecture</h1>
+      <p class="page-sub">End-to-end design covering data engineering, machine learning, mineral systems modelling, AI interpretation, and cloud deployment — built for KoBold Metals-style exploration operations.</p>
+    </div>
+
+    <div class="arch-section">
+      <h2>Business Context</h2>
+      <p>GeoExplorer AI is a mineral prospectivity screening platform targeting Cu, Co, Ni and green critical metals across Sub-Saharan Africa. The platform addresses a specific exploration challenge: reducing the cost of identifying drill-ready targets in the <strong>Sediment-Hosted Stratiform Copper (SHSC)</strong> deposit systems of the Lufilian Arc (Zambia Copperbelt, DRC Katanga), Bushveld Complex (South Africa), and satellite green-metals districts across the continent.</p>
+      <h3>Strategic Value</h3>
+      <ul>
+        <li><strong>Triage:</strong> 20,125 grid cells ranked by ML prospectivity → focus field time on top 1% of the search space</li>
+        <li><strong>Diagnostics:</strong> Co/Cu ratio flags DRC Katanga-type SHSC; Ni/Cu flags Bushveld magmatic sulphide</li>
+        <li><strong>Green metals:</strong> Li (Manono, Ewoyaa), Mn (Kalahari), REE (Ngualla, Mrima Hill) — energy transition overlay</li>
+        <li><strong>Logistics:</strong> Infrastructure layer (518 cities, 68 ports, 593 railway segments) informs capex and concentrate routing</li>
+        <li><strong>Decision output:</strong> Field-ready GPS coordinates, drill method, budget, permit authority per jurisdiction</li>
+      </ul>
+    </div>
+
+    <div class="arch-section">
+      <h2>Data Engineering Pipeline</h2>
+      <div class="pipeline">
+        <div class="pipe-step"><div class="num">Phase 1</div><div class="title">Acquisition</div><div class="desc">USGS MRDS WFS · GEM Active Faults · OSM Overpass · Natural Earth · Curated O&G</div></div>
+        <div class="pipe-step"><div class="num">Phase 2</div><div class="title">Processing</div><div class="desc">Spatial joins · Haversine distances · Log-normal geochem · 20,125-point prediction grid</div></div>
+        <div class="pipe-step"><div class="num">Phase 3</div><div class="title">ML Training</div><div class="desc">XGBoost · 5-fold spatial CV · Feature importance · Model comparison</div></div>
+        <div class="pipe-step"><div class="num">Phase 4</div><div class="title">API Layer</div><div class="desc">Vercel serverless Python · IDW interpolation · JSON endpoints · CORS</div></div>
+        <div class="pipe-step"><div class="num">Phase 5</div><div class="title">Intelligence UI</div><div class="desc">Leaflet heatmap · Chart.js · Filter state · CSV exports · LLM interpretation</div></div>
+      </div>
+      <h3>Data Sources</h3>
+      <ul>
+        <li><strong>USGS MRDS WFS (WFS 1.0.0):</strong> Global mineral deposit registry — Cu, Co, Ni, Li, Mn, REE, Graphite. Fixed bbox axis-order bug (lon/lat for WFS 1.0.0, lat/lon for 1.1.0 EPSG:4326).</li>
+        <li><strong>GEM Global Active Faults:</strong> ~40MB worldwide fault network clipped to Africa — 323 segments used as structural proximity features.</li>
+        <li><strong>OpenStreetMap Overpass API:</strong> Real mine/quarry locations within the Africa bbox — live data refresh on pipeline runs.</li>
+        <li><strong>Natural Earth Vector:</strong> Populated places (518 SSA cities pop>50k), seaports (68), country polygons (52), railways (593 segments).</li>
+        <li><strong>Geochemistry:</strong> Calibrated synthetic dataset (no free Africa soil geochem API exists) based on Tembo et al. (2009), Cailteux et al. (2005), USGS PP 1802. Log-normal distributions calibrated to known Copperbelt anomaly thresholds.</li>
+        <li><strong>SRTM Elevation:</strong> 90m DEM via terrain proxy (srtm.py) — slope and elevation features.</li>
+      </ul>
+    </div>
+
+    <div class="arch-section">
+      <h2>Machine Learning Architecture</h2>
+      <h3>Feature Engineering (13 features)</h3>
+      <div class="tech-grid">
+        <div class="tech-card"><div class="cat">Source</div><ul><li>log(Cu ppm) — primary pathfinder</li><li>log(Co ppm) — DRC Katanga diagnostic</li><li>log(Ni ppm) — Bushveld diagnostic</li><li>log(Au ppb), log(Pb ppm)</li></ul></div>
+        <div class="tech-card"><div class="cat">Pathway</div><ul><li>dist_fault_km — structural control</li><li>log(Zn ppm), log(As ppm)</li><li>log(Mo ppm) — porphyry/SHSC discriminator</li></ul></div>
+        <div class="tech-card"><div class="cat">Trap / Modifier</div><ul><li>elevation_m — terrain proxy</li><li>slope_deg — geomorphology</li><li>Fe % — redox boundary indicator</li><li>dist_deposit_km — district proximity</li></ul></div>
+      </div>
+      <h3>Model Selection &amp; Validation</h3>
+      <ul>
+        <li><strong>Algorithm:</strong> XGBoost (gradient boosted trees) selected via 5-fold spatial cross-validation against Random Forest and Logistic Regression</li>
+        <li><strong>Spatial CV:</strong> Geographically blocked folds prevent data leakage from spatial autocorrelation — critical for geological AI models</li>
+        <li><strong>ROC-AUC: 0.889</strong> · PR-AUC: 0.785 — strong performance given synthetic geochem labels</li>
+        <li><strong>Scoring:</strong> 20,125 grid cells at 0.1° resolution (≈11 km) across Central/Southern Africa (15°E–38°E, 35°S–0°)</li>
+        <li><strong>Point scoring:</strong> IDW interpolation from 4 nearest grid cells — serves the <code>/api/score</code> endpoint in &lt;50ms</li>
+      </ul>
+      <h3>Mineral Systems Semantic Model (SHSC Framework)</h3>
+      <p>Each ML feature is mapped to a component of the SOURCE → PATHWAY → TRAP → MODIFIER framework (Hitzman et al. 2010). This grounds model outputs in geological theory and drives the LLM geological interpretation layer, ensuring AI outputs are geologically coherent rather than purely statistical.</p>
+    </div>
+
+    <div class="arch-section">
+      <h2>AI &amp; LLM Interpretation Layer</h2>
+      <ul>
+        <li><strong>Model:</strong> Meta-Llama-3-8B-Instruct via HuggingFace Inference API</li>
+        <li><strong>Prompt engineering:</strong> Structured system prompt with 800-word African Copperbelt geology context (Lufilian Arc, Katanga Supergroup, Bushveld BIC, SEDEX Northern Cape)</li>
+        <li><strong>Output format:</strong> 4–6 bullet geological assessment: score interpretation → SHSC mineral system evidence → limiting factors → recommended next step</li>
+        <li><strong>Fallback:</strong> Deterministic rule-based interpretation when HuggingFace API is unavailable — based on Co/Cu, Ni/Cu, structural proximity thresholds</li>
+        <li><strong>Co/Cu diagnostic:</strong> &gt;10% → DRC Katanga; Ni/Cu &gt;20% → Bushveld magmatic sulphide; else Zambia Copperbelt SHSC or Namaqualand</li>
+      </ul>
+    </div>
+
+    <div class="arch-section">
+      <h2>API &amp; Deployment Architecture</h2>
+      <div class="tech-grid">
+        <div class="tech-card"><div class="cat">Frontend</div><ul><li>Vanilla JS + Leaflet.js</li><li>Chart.js visualisations</li><li>Leaflet.heat heatmap</li><li>Responsive dark UI</li><li>Vercel static hosting</li></ul></div>
+        <div class="tech-card"><div class="cat">API (Vercel Serverless)</div><ul><li>Python BaseHTTPRequestHandler</li><li>/api/predictions — heatmap data</li><li>/api/targets — enriched targets</li><li>/api/score — IDW point scoring</li><li>/api/data — context layers</li><li>/api/metadata — model info</li></ul></div>
+        <div class="tech-card"><div class="cat">ML Pipeline</div><ul><li>scripts/01 — data acquisition</li><li>scripts/02 — feature engineering</li><li>scripts/03 — XGBoost training</li><li>Pre-computed predictions.csv</li><li>Incremental refresh via Make</li></ul></div>
+        <div class="tech-card"><div class="cat">Cloudflare Worker</div><ul><li>Edge scoring API</li><li>POST /score endpoint</li><li>Sub-100ms global latency</li><li>CORS handling</li><li>wrangler.jsonc config</li></ul></div>
+      </div>
+      <h3>Key Technical Decisions</h3>
+      <ul>
+        <li><strong>Pre-computed grid vs. live inference:</strong> 20,125 scores pre-computed offline; API serves CSV lookup + IDW — eliminates cold-start latency and removes XGBoost from serverless runtime</li>
+        <li><strong>No system GDAL dependency:</strong> GeoJSON loaded with Python stdlib <code>json</code> module — enables deployment to any Python serverless environment without binary dependencies</li>
+        <li><strong>Spatial CV over random CV:</strong> Prevents optimistic AUC inflation from spatial autocorrelation — critical methodological choice for geological ML</li>
+        <li><strong>Log-normal geochem normalization:</strong> Cu, Co, Ni, Au, Pb, Zn, Mo, As all log-transformed before model ingestion — correct for heavy-tailed geochemical distributions</li>
+      </ul>
+    </div>
+
+    <div class="arch-section">
+      <h2>Key Insights</h2>
+      <ul>
+        <li><strong>Dist. to deposit</strong> is the single highest-importance feature — district-scale proximity overwhelms individual geochemical signals, consistent with SHSC deposit clustering</li>
+        <li><strong>Co signal</strong> ranks above Cu in importance — reflects the DRC Katanga Co-dominant systems in the training data; Co anomalies are rarer and more diagnostic</li>
+        <li><strong>Fault proximity</strong> (dist_fault_km) ranks 3rd — validates the structural control hypothesis for SHSC fluid focussing in the Lufilian Arc</li>
+        <li><strong>Mo inversely associated with prospectivity</strong> — consistent with SHSC vs. porphyry discrimination; high Mo indicates a different mineral system</li>
+        <li><strong>Highest-scoring cells cluster in</strong> the Zambia Copperbelt extension (Chililabombwe-Ndola trend) and northern DRC Katanga (Kolwezi-Tenke corridor), validating the model's geological coherence</li>
+        <li><strong>South Africa model extension:</strong> Bushveld BIC targets identifiable by Ni-dominant signal; Kalahari Copper Belt shows SHSC-type Co/Cu pattern consistent with the Zambian system</li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- #main -->
+</div><!-- #body -->
+</div><!-- #app -->
+
+<!-- Loading overlay -->
+<div id="loading-overlay">
+  <div class="spinner" style="width:36px;height:36px;border-width:3px"></div>
+  <div class="msg">Loading GeoExplorer AI…</div>
+</div>
+
+<script>
+/* ================================================================
+   GeoExplorer AI — Frontend Application
+   ================================================================ */
+
+const API = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000'
+  : '';
+
+/* ── State ─────────────────────────────────────────────────────── */
+let state = {
+  meta:       null,
+  predictions:[],
+  targets:    [],
+  countries:  new Set(['Angola','Botswana','DRC','Ethiopia','Gabon','Ghana',
+                       'Kenya','Malawi','Mozambique','Namibia','South Africa',
+                       'Tanzania','Uganda','Zambia','Zimbabwe']),
+  tiers:      new Set(['Very High','High','Moderate']),
+  scoreMin:   0.30,
+  scoreMax:   1.00,
+  charts:     {},
+};
+
+/* ── Tab switching ─────────────────────────────────────────────── */
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name==='map') setTimeout(()=>map.invalidateSize(), 50);
+  if (name==='dashboard' && !state.charts.tier) buildCharts();
+  if (name==='targets')  buildTargetsTable();
+  if (name==='resources') buildResourcesTab();
+  if (name==='drill')    buildDrillTable();
+}
+
+/* ── Filter helpers ────────────────────────────────────────────── */
+function toggleTier(el) {
+  el.classList.toggle('active');
+  const t = el.dataset.tier;
+  state.tiers.has(t) ? state.tiers.delete(t) : state.tiers.add(t);
+}
+function updateScoreRange() {
+  state.scoreMin = parseFloat(document.getElementById('score-min').value);
+  state.scoreMax = parseFloat(document.getElementById('score-max').value);
+  document.getElementById('score-min-lbl').textContent = state.scoreMin.toFixed(2);
+  document.getElementById('score-max-lbl').textContent = state.scoreMax.toFixed(2);
+}
+async function applyFilters() {
+  await loadPredictions();
+  updateHeatmap();
+  if (document.getElementById('tab-targets').classList.contains('active')) buildTargetsTable();
+  if (document.getElementById('tab-dashboard').classList.contains('active')) buildCharts();
+}
+
+/* ── Leaflet Map ───────────────────────────────────────────────── */
+let map, heatLayer, layers = {};
+
+function initMap() {
+  map = L.map('map', {center:[-10,25], zoom:4, zoomControl:true});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    {attribution:'© OpenStreetMap contributors © CARTO', maxZoom:18}).addTo(map);
+
+  layers.heat  = L.layerGroup().addTo(map);
+  layers.deps  = L.layerGroup().addTo(map);
+  layers.oilgas= L.layerGroup().addTo(map);
+  layers.cities= L.layerGroup().addTo(map);
+  layers.ports = L.layerGroup();
+  layers.rails = L.layerGroup();
+
+  map.on('click', e => scorePointOnMap(e.latlng.lat, e.latlng.lng));
+  loadContextLayers();
+}
+
+function toggleLayer(name) {
+  const on = document.getElementById('lyr-'+name).checked;
+  if (on) map.addLayer(layers[name]); else map.removeLayer(layers[name]);
+}
+
+function updateHeatmap() {
+  layers.heat.clearLayers();
+  const pts = state.predictions
+    .filter(p => state.tiers.has(p.tier) && p.score>=state.scoreMin && p.score<=state.scoreMax)
+    .map(p => [p.lat, p.lon, p.score]);
+  if (pts.length > 0) {
+    L.heatLayer(pts, {
+      radius:22, blur:28, maxZoom:10, max:0.9,
+      gradient:{0.2:'#1e3a5f',0.4:'#1d4ed8',0.55:'#34d399',0.68:'#f59e0b',0.82:'#f87171',0.95:'#fef3c7'}
+    }).addTo(layers.heat);
+  }
+}
+
+async function loadContextLayers() {
+  // Deposits
+  try {
+    const r = await fetch(API+'/api/data?type=deposits');
+    const d = await r.json();
+    layers.deps.clearLayers();
+    (d.data||[]).forEach(dep => {
+      const c = dep.commod1||dep.commodity||'Cu';
+      const col = c.includes('Co')?'#60a5fa':c.includes('Ni')?'#f59e0b':'#34d399';
+      L.circleMarker([dep.lat,dep.lon],{radius:4,color:col,fillColor:col,fillOpacity:.85,weight:1})
+        .bindTooltip(`<b>${dep.district||dep.name||'Deposit'}</b><br>${c}`)
+        .addTo(layers.deps);
+    });
+  } catch(e){}
+
+  // Oil & Gas
+  try {
+    const r = await fetch(API+'/api/data?type=oilgas');
+    const d = await r.json();
+    layers.oilgas.clearLayers();
+    (d.data||[]).forEach(f => {
+      const col = (f.status||'').toLowerCase().includes('produc') ? '#fbbf24' : '#f97316';
+      L.circleMarker([f.lat,f.lon],{radius:7,color:col,fillColor:col,fillOpacity:.9,weight:2})
+        .bindTooltip(`<b>${f.name}</b><br>${f.type} · ${f.country}<br>Status: ${f.status}`)
+        .addTo(layers.oilgas);
+    });
+  } catch(e){}
+
+  // Cities
+  try {
+    const r = await fetch(API+'/api/data?type=cities');
+    const d = await r.json();
+    layers.cities.clearLayers();
+    (d.data||[]).forEach(c => {
+      const pop = c.population||0;
+      const radius = pop>2e6?10:pop>500000?7:4;
+      L.circleMarker([c.lat,c.lon],{radius,color:'#e2e8f0',fillColor:'#e2e8f0',fillOpacity:.6,weight:1})
+        .bindTooltip(`<b>${c.name}</b><br>${c.country}`)
+        .addTo(layers.cities);
+    });
+  } catch(e){}
+
+  // Ports
+  try {
+    const r = await fetch(API+'/api/data?type=ports');
+    const d = await r.json();
+    layers.ports.clearLayers();
+    (d.data||[]).forEach(p => {
+      L.circleMarker([p.lat,p.lon],{radius:5,color:'#60a5fa',fillColor:'#60a5fa',fillOpacity:.8,weight:2})
+        .bindTooltip(`⚓ <b>${p.name}</b><br>${p.country}`)
+        .addTo(layers.ports);
+    });
+  } catch(e){}
+
+  // Railways
+  try {
+    const r = await fetch(API+'/api/data?type=railways');
+    const d = await r.json();
+    layers.rails.clearLayers();
+    (d.data||[]).forEach(seg => {
+      if (seg.coords&&seg.coords.length>=2)
+        L.polyline(seg.coords,{color:'#475569',weight:1.5,opacity:.7})
+          .bindTooltip(seg.name||'Railway').addTo(layers.rails);
+    });
+  } catch(e){}
+}
+
+async function scorePointOnMap(lat, lon) {
+  try {
+    const r = await fetch(`${API}/api/score?lat=${lat}&lon=${lon}`);
+    const d = await r.json();
+    if (d.error) return;
+    const tt = document.getElementById('score-tooltip');
+    const cocu = d.features && d.features.log_co_ppm && d.features.log_cu_ppm
+      ? (100*(Math.expm1(d.features.log_co_ppm)/Math.max(Math.expm1(d.features.log_cu_ppm),1))).toFixed(1)+'%' : '—';
+    document.getElementById('tt-score').textContent = d.score.toFixed(3);
+    document.getElementById('tt-tier').innerHTML = `<span class="tier-badge tier-${d.tier.replace(' ','').substring(0,2).toUpperCase()}">${d.tier}</span>`;
+    document.getElementById('tt-cocu').textContent   = cocu;
+    document.getElementById('tt-country').textContent= d.country;
+    document.getElementById('tt-dist').textContent   = d.nearest_km;
+    tt.style.display='block';
+    L.marker([lat,lon],{icon:L.divIcon({html:'<div style="background:#f59e0b;width:14px;height:14px;border-radius:50%;border:2px solid #fff"></div>',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(map);
+  } catch(e){}
+}
+
+/* ── Score point from sidebar ──────────────────────────────────── */
+async function scorePoint() {
+  const lat = parseFloat(document.getElementById('q-lat').value);
+  const lon = parseFloat(document.getElementById('q-lon').value);
+  const res = document.getElementById('score-result');
+  res.style.display='block';
+  res.innerHTML='<div class="spinner"></div>';
+  try {
+    const r = await fetch(`${API}/api/score?lat=${lat}&lon=${lon}`);
+    const d = await r.json();
+    if (d.error) { res.innerHTML=`<span style="color:var(--red)">${d.error}</span>`; return; }
+    const cls = {VH:'tier-VH',Hi:'tier-H',Mo:'tier-M',Lo:'tier-L'}[d.tier.substring(0,2)] || 'tier-L';
+    res.innerHTML=`
+      <div style="font-size:1.1rem;font-weight:800;color:var(--gold)">${d.score.toFixed(3)}</div>
+      <span class="tier-badge ${cls}">${d.tier}</span>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:6px">${d.country} · ${d.nearest_km} km to grid</div>`;
+    scorePointOnMap(lat, lon);
+  } catch(e){ res.innerHTML='<span style="color:var(--red)">API error</span>'; }
+}
+
+/* ── Data loading ──────────────────────────────────────────────── */
+async function loadPredictions() {
+  const tiers   = [...state.tiers].join(',');
+  const url     = `${API}/api/predictions?tier=${encodeURIComponent(tiers)}&minScore=${state.scoreMin}&maxScore=${state.scoreMax}`;
+  const r       = await fetch(url);
+  const d       = await r.json();
+  state.predictions = d.data || [];
+}
+
+async function loadTargets() {
+  const url  = `${API}/api/targets?n=100&minScore=${state.scoreMin}`;
+  const r    = await fetch(url);
+  const d    = await r.json();
+  state.targets = d.data || [];
+}
+
+async function loadMeta() {
+  const r = await fetch(API+'/api/metadata');
+  const d = await r.json();
+  state.meta = d;
+  updateMetaUI();
+}
+
+function updateMetaUI() {
+  const m = state.meta;
+  if (!m) return;
+  document.getElementById('hdr-auc').textContent   = m.roc_auc.toFixed(3);
+  document.getElementById('hdr-cells').textContent = m.grid_points.toLocaleString();
+  document.getElementById('mc-auc').textContent    = m.roc_auc.toFixed(3);
+  document.getElementById('mc-prauc').textContent  = m.pr_auc.toFixed(3);
+  document.getElementById('mc-train').textContent  = m.n_train.toLocaleString();
+  document.getElementById('mc-grid').textContent   = m.grid_points.toLocaleString();
+  document.getElementById('mc-commodity').textContent = m.commodity;
+  // KPIs
+  const p = m.portfolio||{};
+  document.getElementById('kpi-total').textContent = m.grid_points.toLocaleString();
+  document.getElementById('kpi-vh').textContent    = (p.very_high||0).toLocaleString();
+  document.getElementById('kpi-hi').textContent    = (p.high||0).toLocaleString();
+  document.getElementById('kpi-auc').textContent   = m.roc_auc.toFixed(3);
+  document.getElementById('kpi-train').textContent = m.n_train.toLocaleString();
+}
+
+/* ── Charts ────────────────────────────────────────────────────── */
+const CHART_DEFAULTS = {
+  color:'#e2e8f0',
+  plugins:{legend:{labels:{color:'#e2e8f0',font:{family:'Inter',size:11}}}},
+  scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'#1e3a5f'}},
+          y:{ticks:{color:'#94a3b8'},grid:{color:'#1e3a5f'}}},
+};
+
+function buildCharts() {
+  const m = state.meta;
+  if (!m) return;
+  const p = m.portfolio||{};
+
+  // Tier donut
+  if (!state.charts.tier) {
+    const ctx = document.getElementById('chart-tier').getContext('2d');
+    state.charts.tier = new Chart(ctx,{
+      type:'doughnut',
+      data:{labels:['Very High','High','Moderate','Low'],
+            datasets:[{data:[p.very_high,p.high,p.moderate,p.low],
+                       backgroundColor:['#f87171','#f59e0b','#60a5fa','#475569'],borderWidth:0}]},
+      options:{cutout:'60%',plugins:{legend:{position:'bottom',labels:{color:'#e2e8f0',font:{size:11}}}}}
+    });
+  }
+
+  // Feature importance
+  if (!state.charts.fi && m.feature_importance && Object.keys(m.feature_importance).length) {
+    const imp  = m.feature_importance;
+    const disp = m.display_names || {};
+    const sorted = Object.entries(imp).sort((a,b)=>a[1]-b[1]);
+    const ctx  = document.getElementById('chart-fi').getContext('2d');
+    state.charts.fi = new Chart(ctx,{
+      type:'bar',
+      data:{labels:sorted.map(([k])=>disp[k]||k),
+            datasets:[{data:sorted.map(([,v])=>v),
+                       backgroundColor:sorted.map(([k])=>k.includes('co')||k.includes('ni')?'#f59e0b':'#34d399')}]},
+      options:{indexAxis:'y',plugins:{legend:{display:false}},
+               scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'#1e3a5f'}},
+                       y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#1e3a5f'}}}}
+    });
+  }
+
+  // Score histogram from predictions
+  if (state.predictions.length && !state.charts.hist) {
+    const bins = Array(20).fill(0);
+    state.predictions.forEach(p => { const i=Math.min(19,Math.floor(p.score*20)); bins[i]++; });
+    const labels = bins.map((_,i)=>(i*0.05).toFixed(2));
+    const ctx = document.getElementById('chart-hist').getContext('2d');
+    state.charts.hist = new Chart(ctx,{
+      type:'bar',
+      data:{labels,datasets:[{data:bins,backgroundColor:'#34d399',borderRadius:2}]},
+      options:{plugins:{legend:{display:false}},
+               scales:{x:{ticks:{color:'#94a3b8',maxTicksLimit:10},grid:{color:'#1e3a5f'}},
+                       y:{ticks:{color:'#94a3b8'},grid:{color:'#1e3a5f'}}}}
+    });
+  }
+
+  // Country bar
+  if (state.targets.length && !state.charts.country) {
+    const counts = {};
+    state.targets.forEach(t=>{ counts[t.country]=(counts[t.country]||0)+1; });
+    const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const ctx = document.getElementById('chart-country').getContext('2d');
+    state.charts.country = new Chart(ctx,{
+      type:'bar',
+      data:{labels:sorted.map(([c])=>c),
+            datasets:[{data:sorted.map(([,n])=>n),backgroundColor:'#f59e0b',borderRadius:3}]},
+      options:{indexAxis:'y',plugins:{legend:{display:false}},
+               scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'#1e3a5f'}},
+                       y:{ticks:{color:'#94a3b8',font:{size:11}},grid:{color:'#1e3a5f'}}}}
+    });
+  }
+}
+
+/* ── Targets table ─────────────────────────────────────────────── */
+const TIER_CLS = {'Very High':'tier-VH','High':'tier-H','Moderate':'tier-M','Low':'tier-L'};
+function tierBadge(t){ return `<span class="tier-badge ${TIER_CLS[t]||'tier-L'}">${t}</span>`; }
+function toDMS(dd,isLat){
+  const h = isLat?(dd<0?'S':'N'):(dd<0?'W':'E');
+  const a = Math.abs(dd), d=Math.floor(a), m=Math.floor((a%1)*60);
+  const s = (((a%1)*60%1)*60).toFixed(1).padStart(4,'0');
+  return `${d}°${String(m).padStart(2,'0')}'${s}" ${h}`;
+}
+
+function buildTargetsTable() {
+  const tbody = document.getElementById('targets-body');
+  tbody.innerHTML='';
+  document.getElementById('targets-count').textContent = `${state.targets.length} targets`;
+  state.targets.forEach(t => {
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td style="font-weight:700;color:var(--gold)">${t.id}</td>
+      <td>${t.country}</td>
+      <td>${t.lat.toFixed(3)}</td><td>${t.lon.toFixed(3)}</td>
+      <td class="score-cell">${t.score.toFixed(3)}</td>
+      <td>${tierBadge(t.tier)}</td>
+      <td>${t.co_cu_pct.toFixed(1)}</td>
+      <td>${t.ni_cu_pct.toFixed(1)}</td>
+      <td>${t.uncertainty.toFixed(3)}</td>
+      <td style="white-space:nowrap">${t.est_cost}</td>
+      <td class="${t.decision==='Advance'?'decision-adv':'decision-hold'}">${t.decision}</td>
+      <td style="font-size:0.72rem;color:var(--muted)">${t.program}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ── Drill program table ───────────────────────────────────────── */
+const PERMITS = {
+  'South Africa':'MPRDA (DMRE)','Zambia':'Exploration Licence (MMMD)',
+  'DRC':'Permis de Recherches (CAMI)','Botswana':'Prospecting Licence (MMWE)',
+  'Zimbabwe':'Special Grant (MMCZ)','Namibia':'EPL (MME)',
+  'Mozambique':'Licença Prospeção (MIREME)','Tanzania':'Prospecting Licence (MEM)',
+  'Kenya':'Prospecting Licence (Mining Act 2016)','Ghana':'Reconnaissance Lic (Minerals Comm)',
+  'Angola':'Licença Prospecção (MIREMPET)','Uganda':'Exploration Licence (DGSM)',
+};
+function buildDrillTable() {
+  const tbody = document.getElementById('drill-body');
+  tbody.innerHTML='';
+  state.targets.filter(t=>t.score>=0.50).slice(0,20).forEach(t=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td style="font-weight:700;color:var(--gold)">${t.id}</td>
+      <td>${t.country}</td>
+      <td>${t.lat.toFixed(4)}</td><td>${t.lon.toFixed(4)}</td>
+      <td style="font-family:monospace;font-size:0.72rem">${toDMS(t.lat,true)}</td>
+      <td style="font-family:monospace;font-size:0.72rem">${toDMS(t.lon,false)}</td>
+      <td class="score-cell">${t.score.toFixed(3)}</td>
+      <td style="font-size:0.75rem">${t.program.split('–')[0]}</td>
+      <td style="white-space:nowrap">${t.est_cost}</td>
+      <td style="font-size:0.72rem;color:var(--muted)">${PERMITS[t.country]||'Check national authority'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ── Resources tab ─────────────────────────────────────────────── */
+const GREEN_DATA = [
+  ['DRC','Manono','Li','Pegmatite','Pre-development','Largest hard-rock Li in Africa; 400 Mt @ 1.65% Li₂O'],
+  ['Zimbabwe','Bikita','Li','Pegmatite','Operating','Historic Li producer; spodumene + lepidolite'],
+  ['Namibia','Karibib','Li','Pegmatite','Exploration','Spodumene pegmatites'],
+  ['South Africa','Kalahari Mn','Mn','Sedimentary','Operating','World\'s largest Mn ore body; ~80% global reserves'],
+  ['Gabon','Moanda','Mn','Sedimentary','Operating','High-grade Mn; Compagnie Minière de l\'Ogooué'],
+  ['Tanzania','Ngualla','REE','Carbonatite','Pre-feasibility','Nd-Pr dominant; Peak Rare Earths'],
+  ['Kenya','Mrima Hill','REE','Carbonatite','Exploration','Elevated Nb, REE in coastal carbonatite'],
+  ['Malawi','Songwe Hill','REE','Carbonatite','Pre-development','Mkango Resources; Nd-Pr focus'],
+  ['Ghana','Ewoyaa','Li','Pegmatite','Permitting','Atlantic Lithium; spodumene to battery grade'],
+  ['Tanzania','Mahenge','Graphite','Metamorphic','Development','Large flake graphite; NEXT Graphite'],
+  ['Tanzania','Kabanga','Ni','Magmatic sulphide','Pre-feasibility','High-grade Ni sulphide; Kabanga Nickel Ltd'],
+  ['Zambia','Munali','Ni','Magmatic sulphide','Care & maintenance','Magmatic Ni-Cu near Lusaka'],
+];
+
+async function buildResourcesTab() {
+  // Green metals table
+  const gb = document.getElementById('green-body');
+  gb.innerHTML='';
+  GREEN_DATA.forEach(([ctry,dist,metal,style,status,notes])=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${ctry}</td><td style="font-weight:600;color:var(--text)">${dist}</td>
+      <td style="color:var(--teal);font-weight:700">${metal}</td><td>${style}</td>
+      <td><span style="font-size:0.72rem;padding:2px 8px;border-radius:4px;background:var(--panel2)">${status}</span></td>
+      <td style="font-size:0.72rem;color:var(--muted)">${notes}</td>`;
+    gb.appendChild(tr);
+  });
+  // O&G table
+  try {
+    const r = await fetch(API+'/api/data?type=oilgas');
+    const d = await r.json();
+    const ob = document.getElementById('og-body');
+    ob.innerHTML='';
+    (d.data||[]).forEach(f=>{
+      const tr=document.createElement('tr');
+      const col=(f.status||'').toLowerCase().includes('produc')?'var(--green)':'var(--muted)';
+      tr.innerHTML=`<td>${f.country}</td><td style="font-weight:600">${f.name}</td>
+        <td>${f.type||''}</td><td style="color:${col}">${f.status}</td>`;
+      ob.appendChild(tr);
+    });
+  } catch(e){}
+}
+
+/* ── CSV download ──────────────────────────────────────────────── */
+function downloadCSV(type) {
+  const data = type==='targets' ? state.targets : state.targets.filter(t=>t.score>=0.5).slice(0,20);
+  if (!data.length) return;
+  const keys = Object.keys(data[0]);
+  const csv  = [keys.join(','), ...data.map(r=>keys.map(k=>`"${r[k]??''}"`).join(','))].join('\n');
+  const a    = document.createElement('a');
+  a.href     = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download = `geoexplorer_${type}.csv`;
+  a.click();
+}
+
+/* ── Country chip builder ──────────────────────────────────────── */
+function buildCountryChips() {
+  const ALL = ['Angola','Botswana','DRC','Ethiopia','Gabon','Ghana','Kenya',
+               'Malawi','Mozambique','Namibia','South Africa','Tanzania','Uganda','Zambia','Zimbabwe'];
+  const cont = document.getElementById('country-chips');
+  ALL.forEach(c=>{
+    const el = document.createElement('div');
+    el.className = 'chip' + (state.countries.has(c)?' active':'');
+    el.textContent = c;
+    el.onclick = ()=>{
+      el.classList.toggle('active');
+      state.countries.has(c) ? state.countries.delete(c) : state.countries.add(c);
+    };
+    cont.appendChild(el);
+  });
+}
+
+/* ── Boot ──────────────────────────────────────────────────────── */
+async function boot() {
+  try {
+    initMap();
+    buildCountryChips();
+    await Promise.all([loadMeta(), loadPredictions()]);
+    updateHeatmap();
+    await loadTargets();
+    buildTargetsTable();
+    buildCharts();
+  } catch(e){ console.error(e); }
+  document.getElementById('loading-overlay').style.display='none';
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "name": "geoexplorer-ai-africa",
+  "builds": [
+    { "src": "api/*.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/api/predictions", "dest": "/api/predictions.py" },
+    { "src": "/api/score",       "dest": "/api/score.py" },
+    { "src": "/api/data",        "dest": "/api/data.py" },
+    { "src": "/api/metadata",    "dest": "/api/metadata.py" },
+    { "src": "/api/targets",     "dest": "/api/targets.py" },
+    { "src": "/api/health",      "dest": "/api/health.py" },
+    { "src": "/(.*)",            "dest": "/public/$1" }
+  ]
+}
