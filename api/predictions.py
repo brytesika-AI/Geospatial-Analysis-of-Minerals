@@ -1,5 +1,6 @@
 """GET /api/predictions — filtered heatmap grid (lat/lon/score/tier only)."""
-from _utils import BaseHandler, DATA_PROC, read_csv, score_tier
+import sys, os; sys.path.insert(0, os.path.dirname(__file__))
+from _utils import BaseHandler, DATA_PROC, read_csv, score_tier, infer_country
 
 _CACHE: list[dict] | None = None
 
@@ -26,7 +27,6 @@ class handler(BaseHandler):
             if t not in tiers: continue
             if not (min_s <= s <= max_s): continue
             if countries:
-                from _utils import infer_country
                 if infer_country(float(r["lat"]), float(r["lon"])) not in countries:
                     continue
             out.append({

@@ -1,4 +1,5 @@
 """GET /api/metadata — model metadata + portfolio summary."""
+import sys, os; sys.path.insert(0, os.path.dirname(__file__))
 from _utils import BaseHandler, MODELS, DATA_PROC, read_csv
 import json
 

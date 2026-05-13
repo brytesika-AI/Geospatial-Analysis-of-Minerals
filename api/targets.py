@@ -1,4 +1,5 @@
 """GET /api/targets?n=50&minScore=0.5&tier=&country= — enriched priority targets."""
+import sys, os; sys.path.insert(0, os.path.dirname(__file__))
 import math
 from _utils import BaseHandler, DATA_PROC, read_csv, infer_country, score_tier
 

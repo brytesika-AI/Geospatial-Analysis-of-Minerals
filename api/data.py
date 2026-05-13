@@ -1,4 +1,5 @@
 """GET /api/data?type=deposits|cities|oilgas|ports — context layer data."""
+import sys, os; sys.path.insert(0, os.path.dirname(__file__))
 import json
 from _utils import BaseHandler, DATA_RAW, read_csv, read_geojson_points
 

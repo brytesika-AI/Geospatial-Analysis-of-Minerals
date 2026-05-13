@@ -1,4 +1,5 @@
 """GET /api/score?lat=&lon= — IDW prospectivity score for any point."""
+import sys, os; sys.path.insert(0, os.path.dirname(__file__))
 from _utils import BaseHandler, DATA_PROC, read_csv, idw_score
 
 _CACHE = None
