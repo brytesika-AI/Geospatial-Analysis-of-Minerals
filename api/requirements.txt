@@ -1,0 +1,2 @@
+# All API handlers use Python stdlib only (csv, json, math, pathlib)
+# No external packages required for Vercel serverless functions
