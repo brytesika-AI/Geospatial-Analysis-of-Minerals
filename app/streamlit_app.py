@@ -23,12 +23,16 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from dotenv import load_dotenv
 from streamlit_folium import st_folium
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-load_dotenv(ROOT / ".env")
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv(ROOT / ".env")
+except ImportError:
+    pass
 
 from app.geo_utils import (
     REGION_CENTER, humanise_features, infer_country,
@@ -592,10 +596,10 @@ def render_map(
         for _, f in oil_gas_df.iterrows():
             status = str(f.get("status","")).lower()
             colour = "#fbbf24" if "produc" in status else "#f97316"
-            folium.RegularPolygonMarker(
+            folium.CircleMarker(
                 location=[f.lat, f.lon],
-                number_of_sides=3, radius=9,
-                color=colour, fill=True, fill_color=colour, fill_opacity=0.85,
+                radius=8, color=colour, fill=True,
+                fill_color=colour, fill_opacity=0.9, weight=2,
                 tooltip=(
                     f"<b>{f.get('name','O&G field')}</b><br>"
                     f"{f.get('type','')} · {f.get('country','')}<br>"
