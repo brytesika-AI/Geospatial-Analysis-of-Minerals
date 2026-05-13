@@ -13,23 +13,25 @@ from _utils import BaseHandler, DATA_PROC, DATA_RAW, read_csv, infer_country, sc
 
 GROQ_KEY = os.environ.get("GROQ_API_KEY", "")
 HF_KEY   = os.environ.get("HF_API_KEY", "")
-# HuggingFace now uses OpenAI-compatible chat completions endpoint (2024+)
-# Default model: zephyr-7b-beta (free, no gating, good instruction following)
-# Alternatives: mistralai/Mistral-7B-Instruct-v0.3, Qwen/Qwen2.5-7B-Instruct
-HF_MODEL = os.environ.get("HF_MODEL", "")  # override via env if needed
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 HF_BASE  = "https://router.huggingface.co/hf-inference/models/{model}/v1/chat/completions"
 
-# Models tried in order — all confirmed reachable on hf-inference router
-HF_MODELS = [
-    HF_MODEL,                                    # user override (if set)
-    "mistralai/Mistral-7B-Instruct-v0.3",
-    "microsoft/Phi-3.5-mini-instruct",
-    "Qwen/Qwen2.5-7B-Instruct",
-    "google/gemma-2-2b-it",
+# Groq model order: Gemma first (user preference), LLaMA fallback
+# All free on Groq — get key at console.groq.com (30 seconds)
+GROQ_MODELS = [
+    os.environ.get("GROQ_MODEL", "gemma2-9b-it"),
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
 ]
-HF_MODELS = [m for m in HF_MODELS if m]         # drop blanks
+
+# HF fallback: Llama models on HF router (require accepting Meta terms at hf.co)
+HF_MODELS = [
+    os.environ.get("HF_MODEL", ""),
+    "meta-llama/Llama-3.2-3B-Instruct",
+    "meta-llama/Llama-3.1-8B-Instruct",
+]
+HF_MODELS = [m for m in HF_MODELS if m]
 
 _GRID  = None
 _DUMPS = None
@@ -111,20 +113,31 @@ State ADVANCE / HOLD / DROP clearly. Give next 3 actions with a 90-day timeline.
 Be specific to {country}. Use geological terminology. Write for a board-level audience — precise, no filler."""
 
 
-def _call_groq(prompt: str) -> str:
-    payload = json.dumps({
-        "model":       "llama-3.3-70b-versatile",
-        "messages":    [{"role": "user", "content": prompt}],
-        "max_tokens":  900,
-        "temperature": 0.35,
-    }).encode()
-    req = urllib.request.Request(
-        GROQ_URL, data=payload,
-        headers={"Content-Type": "application/json",
-                 "Authorization": f"Bearer {GROQ_KEY}"},
-    )
-    with urllib.request.urlopen(req, timeout=28) as r:
-        return json.loads(r.read())["choices"][0]["message"]["content"].strip()
+def _call_groq(prompt: str) -> tuple[str, str]:
+    last_err = ""
+    for model in GROQ_MODELS:
+        payload = json.dumps({
+            "model":       model,
+            "messages":    [{"role": "user", "content": prompt}],
+            "max_tokens":  900,
+            "temperature": 0.35,
+        }).encode()
+        req = urllib.request.Request(
+            GROQ_URL, data=payload,
+            headers={"Content-Type": "application/json",
+                     "Authorization": f"Bearer {GROQ_KEY}"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=28) as r:
+                text = json.loads(r.read())["choices"][0]["message"]["content"].strip()
+                return model, text
+        except urllib.error.HTTPError as e:
+            last_err = f"{model}: HTTP {e.code}"
+            continue
+        except Exception as e:
+            last_err = f"{model}: {e}"
+            continue
+    raise RuntimeError(f"All Groq models failed. Last: {last_err}")
 
 
 def _call_hf_model(model: str, prompt: str) -> str:
@@ -245,8 +258,9 @@ class handler(BaseHandler):
 
         if GROQ_KEY:
             try:
-                text = _call_groq(prompt)
-                return {"source": "groq-llama3.3", "sections": _parse_sections(text), "raw": text}
+                model_used, text = _call_groq(prompt)
+                label = model_used.replace("-versatile","").replace("-instant","")
+                return {"source": f"groq-{label}", "sections": _parse_sections(text), "raw": text}
             except Exception as e:
                 errors.append(f"groq: {e}")
 
