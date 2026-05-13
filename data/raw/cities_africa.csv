@@ -1,0 +1,519 @@
+name,country,pop,lon,lat,type
+Bassar,Togo,61845,0.789004,9.261,town
+Bombo,Uganda,75000,32.533299,0.583299,town
+Manzini,eSwatini,110537,31.388005,-26.495001,town
+Umuahia,Nigeria,264662,7.486002,5.532003,town
+Uyo,Nigeria,554906,7.916153,5.036014,city
+Owerri,Nigeria,215038,7.026004,5.492997,town
+Nyeri,Kenya,51084,36.951004,-0.416997,town
+Sunyani,Ghana,70299,-2.336003,7.335999,town
+Gueckedou,Guinea,221715,-10.151001,8.553996,town
+Bouaflé,Ivory Coast,60962,-5.748002,6.977997,town
+Divo,Ivory Coast,127867,-5.360004,5.839002,town
+Buea,Cameroon,90088,9.231003,4.155003,town
+Lokossa,Benin,86971,1.715005,6.615,town
+Laascaanood,Somaliland,60100,47.3167,8.433297,town
+Ceerigaabo,Somaliland,180000,47.333305,10.583298,town
+Damaturu,Nigeria,255895,11.966005,11.748996,town
+Awasa,Ethiopia,133097,38.476999,7.059996,town
+Dhamar,Yemen,191259,44.387461,14.557469,town
+Ibb,Yemen,234837,44.170885,13.975851,town
+Ash Shihr,Yemen,54274,49.609158,14.759317,town
+Najran,Saudi Arabia,369609,44.131559,17.50654,town
+Iwo,Nigeria,250443,4.179993,7.629959,town
+Iseyin,Nigeria,98071,3.590003,7.970016,town
+Kpalimé,Togo,100479,0.630028,6.900391,town
+Sokodé,Togo,117811,1.149997,8.990471,town
+Ad Damazīn,Sudan,186051,34.349986,11.770404,town
+Zabīd,Yemen,152504,43.315537,14.195088,town
+Hajjah,Yemen,208287,43.602134,15.691741,town
+Lahij,Yemen,66288,44.883761,13.058181,town
+Saywun,Yemen,68747,48.787347,15.942992,town
+Kasama,Zambia,200000,31.179947,-10.199598,town
+Chingola,Zambia,182015,27.850021,-12.539611,town
+Chililabombwe,Zambia,82068,27.819997,-12.369595,town
+Chipata,Zambia,85963,32.640013,-13.62957,town
+Solwezi,Zambia,65000,26.39998,-12.179581,town
+Mongu,Zambia,52534,23.120025,-15.279598,town
+Kwekwe,Zimbabwe,99149,29.799979,-18.929608,town
+Masvingo,Zimbabwe,76311,30.82002,-20.059617,town
+Chinhoyi,Zimbabwe,61739,30.180008,-17.359626,town
+Yei,South Sudan,185000,30.680029,4.090382,town
+Gogrial,South Sudan,50065,28.116671,8.533729,town
+El Manaqil,Sudan,151827,32.979992,14.250382,town
+Shendi,Sudan,186611,33.420017,16.680492,town
+Ed Dueim,Sudan,87068,32.299982,13.990398,town
+Umm Ruwaba,Sudan,55742,31.199997,12.910438,town
+Jinja,Uganda,301619,33.199927,0.440424,town
+Arua,Uganda,250000,30.900015,3.02037,town
+Entebbe,Uganda,175128,32.460024,0.060395,town
+Kitgum,Uganda,56891,32.870024,3.300404,town
+Lira,Uganda,135445,32.890023,2.26039,town
+Mbale,Uganda,402368,34.169997,1.09041,town
+Tororo,Uganda,150000,34.169997,0.710382,town
+Tukuyu,Tanzania,127570,33.640003,-9.249579,town
+Sumbawanga,Tanzania,89161,31.620023,-7.95958,town
+Mpanda,Tanzania,73338,31.050032,-6.359574,town
+Shinyanga,Tanzania,107362,33.420017,-3.659584,town
+Bukoba,Tanzania,100504,31.799961,-1.319624,town
+Masaka,Uganda,65373,31.729991,-0.329607,town
+Uvinza,Tanzania,80350,30.390021,-5.119598,town
+Kigoma,Tanzania,164268,29.610017,-4.879613,town
+Mbarara,Uganda,83700,30.650005,-0.599616,town
+Kilosa,Tanzania,91889,36.990031,-6.839597,town
+Bagamoyo,Tanzania,82426,38.890019,-6.439621,town
+Iringa,Tanzania,111820,35.690007,-7.769617,town
+Mtwara,Tanzania,96602,40.189991,-10.26962,town
+Singida,Tanzania,62432,34.740039,-4.819617,town
+Moshi,Tanzania,721018,37.339984,-3.339604,city
+Musoma,Tanzania,133156,33.799993,-1.489587,town
+Korogwe,Tanzania,50000,38.540014,-5.089574,town
+En Nuhud,Sudan,108008,28.420012,12.690426,town
+Nyanza,Rwanda,225209,29.740035,-2.349587,town
+Gitarama,Rwanda,87613,29.759982,-2.069604,town
+Butare,Rwanda,77000,29.730009,-2.589624,town
+Gisenyi,Rwanda,83623,29.262906,-1.684666,town
+Byumba,Rwanda,70593,30.060015,-1.579556,town
+Ruhengeri,Rwanda,86685,29.630015,-1.499613,town
+Birni Nkonni,Niger,65252,5.259927,13.790436,town
+Makeni,Sierra Leone,87679,-12.049973,8.880426,town
+Diourbel,Senegal,148024,-16.240001,14.660383,town
+Louga,Senegal,85075,-16.250001,15.610377,town
+Thiès,Senegal,293001,-16.930011,14.8104,town
+Kolda,Senegal,69267,-14.950028,12.910438,town
+Tambacounda,Senegal,89212,-13.680028,13.780359,town
+Koidu,Sierra Leone,87539,-10.849994,8.440478,town
+Kenema,Sierra Leone,143137,-11.189974,7.880409,town
+Embu,Kenya,58620,37.450003,-0.519569,town
+Machakos,Kenya,144925,37.259989,-1.509535,town
+Sotik,Kenya,71285,35.120016,-0.679559,town
+Kericho,Kenya,98852,35.280006,-0.359579,town
+Kitale,Kenya,150495,34.989947,1.030466,town
+Bungoma,Kenya,55962,34.559999,0.57039,town
+Kakamega,Kenya,63426,34.730014,0.290407,town
+Garissa,Kenya,67861,39.670023,-0.439626,town
+Knysna,South Africa,63106,23.033312,-34.032924,town
+Paarl,South Africa,187865,18.960021,-33.699559,town
+Kilifi,Kenya,80339,39.850012,-3.609613,town
+Thika,Kenya,99322,37.090025,-1.039589,town
+Kendu Bay,Kenya,91248,34.639994,-0.359579,town
+Montepuez,Mozambique,72279,39.000038,-13.119575,town
+Cuamba,Mozambique,73268,36.539981,-14.789602,town
+Brits,South Africa,122497,27.779999,-25.629613,town
+Potchefstroom,South Africa,123669,27.099989,-26.699573,town
+Bethlehem,South Africa,83654,28.299967,-28.219584,town
+Springs,South Africa,236083,28.430037,-26.269573,town
+Mbombela,South Africa,348138,30.98001,-25.469622,town
+Middelburg,South Africa,154706,29.470025,-25.759631,town
+Bethal,South Africa,101919,29.450026,-26.469613,town
+Standerton,South Africa,74021,29.240013,-26.939507,town
+Tzaneen,South Africa,67245,30.169982,-23.819542,town
+Port Shepstone,South Africa,52793,30.459991,-30.719535,town
+Nkhotakota,Malawi,59854,34.300015,-12.91628,town
+Dondo,Mozambique,78648,34.730014,-19.619592,town
+Mocuba,Mozambique,68984,38.260031,-16.84958,town
+Mangochi,Malawi,97711,35.269981,-14.459597,town
+Salima,Malawi,71181,34.433288,-13.782946,town
+Maxixe,Mozambique,119868,35.388551,-23.866023,town
+Uitenhage,South Africa,228912,25.390016,-33.759607,town
+Grahamstown,South Africa,91548,26.520024,-33.299584,town
+Queenstown,South Africa,105309,26.880002,-31.899618,town
+Matola,Mozambique,543907,32.460024,-25.969592,city
+Mandera,Somalia,52885,41.860018,3.940443,town
+Jawhar,Somalia,111308,45.516591,2.767,town
+Kati,Mali,66895,-8.080008,12.750422,town
+Koutiala,Mali,104927,-5.469987,12.390418,town
+Sikasso,Mali,225753,-5.68,11.320406,town
+Nema,Mauritania,200000,-7.250007,16.617059,town
+Markala,Mali,53738,-6.06995,13.670366,town
+Biu,Nigeria,95005,12.189995,10.620423,town
+Bama,Nigeria,118121,13.690007,11.520394,town
+Aba,Nigeria,897560,7.34998,5.100398,city
+Oturkpo,Nigeria,68220,8.129984,7.1904,town
+Calabar,Nigeria,461796,8.330024,4.960407,town
+Wukari,Nigeria,92933,9.780013,7.87041,town
+Jalingo,Nigeria,117757,11.360019,8.900373,town
+Kontagora,Nigeria,98754,5.46994,10.400359,town
+Bida,Nigeria,173849,6.01001,9.080413,town
+Abeokuta,Nigeria,593100,3.350017,7.160427,city
+Ijebu Ode,Nigeria,209175,3.920008,6.820448,town
+Akure,Nigeria,420594,5.199982,7.250396,town
+Ikare,Nigeria,1099931,5.76,7.53043,city
+Owo,Nigeria,276574,5.589984,7.200399,town
+Ondo,Nigeria,257005,4.840004,7.090406,town
+Ado Ekiti,Nigeria,446749,5.219981,7.630373,town
+Ife,Nigeria,482365,4.560021,7.480434,town
+Oshogbo,Nigeria,408245,4.560021,7.770364,town
+Oyo,Nigeria,736072,3.929982,7.850437,city
+Awka,Nigeria,500000,7.069997,6.210434,city
+Onitsha,Nigeria,73374,6.779989,6.140412,town
+Azare,Nigeria,105687,10.190013,11.68041,town
+Bauchi,Nigeria,316149,9.840009,10.310364,town
+Gombe,Nigeria,270366,11.169954,10.290443,town
+Sapele,Nigeria,309162,5.680004,5.890427,town
+Nsukka,Nigeria,111017,7.383363,6.867034,town
+Lokoja,Nigeria,60579,6.73994,7.800388,town
+Idah,Nigeria,75087,6.73994,7.110404,town
+Lafia,Nigeria,127236,8.520038,8.490424,town
+Keffi,Nigeria,85911,7.873617,8.849032,town
+Funtua,Nigeria,180475,7.320008,11.520394,town
+Katsina,Nigeria,432149,7.599991,12.990407,town
+Gusau,Nigeria,226857,6.659996,12.170406,town
+Nguru,Nigeria,111014,10.449998,12.880388,town
+Gashua,Nigeria,125817,11.039987,12.870492,town
+Potiskum,Nigeria,86002,11.079985,11.710382,town
+Birnin Kebbi,Nigeria,108164,4.19994,12.450414,town
+Mubi,Nigeria,225705,13.270032,10.270341,town
+Numan,Nigeria,77617,12.04003,9.460442,town
+Mbaïki,Central African Republic,67132,17.999976,3.870421,town
+Kaga Bandoro,Central African Republic,56520,19.180007,6.980387,town
+Binga,Congo (Kinshasa),64639,20.419983,2.383406,town
+Basankusu,Congo (Kinshasa),52216,19.800021,1.233709,town
+Gbadolite,Congo (Kinshasa),50493,21.019947,4.29037,town
+Bongor,Chad,193941,15.387164,10.285947,town
+Kelo,Chad,96224,15.800007,9.317066,town
+Aketi,Congo (Kinshasa),58601,23.779985,2.740464,town
+Bunia,Congo (Kinshasa),96764,30.240004,1.560407,town
+Wamba,Congo (Kinshasa),146871,27.98996,2.140424,town
+Massawa,Eritrea,142564,39.450036,15.610118,town
+Keren,Eritrea,150000,38.454351,15.781441,town
+Mendefera,Eritrea,257390,38.816328,14.885976,town
+Kahemba,Congo (Kinshasa),50000,19.000018,-7.282929,town
+Mweka,Congo (Kinshasa),50675,21.569991,-4.839615,town
+Ilebo,Congo (Kinshasa),107093,20.609997,-4.319596,town
+Moanda,Congo (Kinshasa),153915,12.354997,-5.922909,town
+Mbanza-Ngungu,Congo (Kinshasa),197545,14.860013,-5.249616,town
+Kabinda,Congo (Kinshasa),59004,24.479994,-6.129614,town
+Gandajika,Congo (Kinshasa),154425,23.960026,-6.739603,town
+Lodja,Congo (Kinshasa),68244,23.591414,-3.532144,town
+Kipushi,Congo (Kinshasa),113347,27.250006,-11.759607,town
+Kongolo,Congo (Kinshasa),105202,26.979996,-5.379479,town
+Beni,Congo (Kinshasa),332903,29.450026,0.490447,town
+Brikama,The Gambia,195136,-16.65995,13.280364,town
+Tamale,Ghana,360579,-0.839985,9.40042,town
+Bolgatanga,Ghana,82177,-0.849985,10.790387,town
+Bawku,Ghana,73594,-0.239996,11.060396,town
+Wa,Ghana,78107,-2.500013,10.060405,town
+Obuasi,Ghana,180117,-1.659987,6.190409,town
+Cape Coast,Ghana,143015,-1.249986,5.110372,town
+Nkawkaw,Ghana,62667,-0.780015,6.550465,town
+Koforidua,Ghana,156653,-0.260021,6.090415,town
+Tema,Ghana,209000,0.010015,5.640365,town
+Ho,Ghana,93044,0.469986,6.60041,town
+Debre Birhan,Ethiopia,65231,39.530031,9.680377,town
+Adigrat,Ethiopia,104021,39.469983,14.280432,town
+Hosaina,Ethiopia,89300,37.850031,7.550378,town
+Giyon,Ethiopia,114534,37.970023,8.530421,town
+Nekemte,Ethiopia,73018,36.530008,9.090464,town
+Asela,Ethiopia,82240,39.139926,7.950405,town
+Shashemene,Ethiopia,114350,38.590037,7.200399,town
+Jijiga,Ethiopia,56821,42.789987,9.350423,town
+Loubomo,Congo (Brazzaville),103894,12.670017,-4.179604,town
+Ferkessédougou,Ivory Coast,62008,-5.200029,9.600407,town
+Siguiri,Guinea,50159,-9.166635,11.417093,town
+Mamou,Guinea,71153,-12.100021,10.380386,town
+Kissidougou,Guinea,66815,-10.120013,9.190458,town
+Man,Ivory Coast,146974,-7.549989,7.400413,town
+Séguéla,Ivory Coast,51157,-6.670017,7.950405,town
+Gagnoa,Ivory Coast,123184,-5.879988,6.150411,town
+Soubré,Ivory Coast,108933,-6.610021,5.790407,town
+San-Pedro,Ivory Coast,210273,-6.639967,4.770418,town
+Bondoukou,Ivory Coast,58297,-2.800021,8.030426,town
+Agboville,Ivory Coast,81770,-4.280034,5.940347,town
+Dimbokro,Ivory Coast,67349,-4.710007,6.650458,town
+Grand Bassam,Ivory Coast,73772,-3.749988,5.200392,town
+Dabou,Ivory Coast,72913,-4.389949,5.320359,town
+Abengourou,Ivory Coast,104020,-3.490004,6.730376,town
+Bafang,Cameroon,93145,10.179988,5.170394,town
+Foumban,Cameroon,92673,10.899996,5.730385,town
+Bafoussam,Cameroon,290768,10.409948,5.490426,town
+Kumba,Cameroon,144413,9.439982,4.640374,town
+Limbe,Cameroon,212474,9.190023,4.030386,town
+Kribi,Cameroon,55224,9.91003,2.940427,town
+Bossangoa,Central African Republic,63064,17.449984,6.483724,town
+Nkongsamba,Cameroon,117063,9.940003,4.960407,town
+Edéa,Cameroon,203149,10.119992,3.800477,town
+Wum,Cameroon,68836,10.070021,6.400422,town
+Kumbo,Cameroon,125486,10.680009,6.220381,town
+Bafia,Cameroon,69270,11.230002,4.750394,town
+Mbalmayo,Cameroon,80206,11.500011,3.520391,town
+Bertoua,Cameroon,218111,13.679981,4.58043,town
+Meiganga,Cameroon,80100,14.28997,6.520492,town
+Ngaoundéré,Cameroon,231357,13.579987,7.320366,town
+Guider,Cameroon,84647,13.940017,9.930387,town
+Capenda-Camulemba,Angola,80000,18.430027,-9.419594,town
+Mbanza-Congo,Angola,60182,14.239999,-6.269606,town
+Soyo,Angola,67491,12.369984,-6.129614,town
+Cabinda,Angola,91791,12.189995,-5.559623,town
+Kandi,Benin,109701,2.940017,11.130366,town
+Ouidah,Benin,83503,2.089991,6.360373,town
+Abomey,Benin,82154,1.989997,7.1904,town
+Natitingou,Benin,80892,1.389982,10.320415,town
+Djougou,Benin,202810,1.680042,9.700427,town
+Muyinga,Burundi,71076,30.31726,-2.852347,town
+Lobatse,Botswana,69804,25.680024,-25.219612,town
+Koudougou,Burkina Faso,87347,-2.369995,12.250478,town
+Ouahigouya,Burkina Faso,79504,-2.419992,13.570424,town
+Banfora,Burkina Faso,60288,-4.760004,10.630448,town
+Boorama,Somaliland,67664,43.180041,9.940413,town
+Burco,Somaliland,106593,45.54,9.520387,town
+Kasese,Uganda,67269,30.081379,0.171078,town
+Benoni,South Africa,2986000,28.327994,-26.147635,city
+Vereeniging,South Africa,1074000,27.958042,-26.647656,city
+Sadah,Yemen,105542,43.849768,16.939779,town
+Al Hudaydah,Yemen,780000,42.951029,14.799891,city
+Al Mukalla,Yemen,258132,49.125931,14.541165,town
+Luanshya,Zambia,151993,28.400013,-13.133321,town
+Ndola,Zambia,396339,28.650024,-12.999944,town
+Mazabuka,Zambia,64006,27.76,-15.860028,town
+Gweru,Zimbabwe,183358,29.82003,-19.450042,town
+Mutare,Zimbabwe,249365,32.650038,-18.970019,town
+Kadoma,Zimbabwe,79174,29.909947,-18.330006,town
+Bo,Sierra Leone,174354,-11.740018,7.970016,town
+Ziguinchor,Senegal,191716,-16.289998,12.589992,town
+Medani,Sudan,332714,33.52001,14.399959,town
+Gedaref,Sudan,201282,35.38,14.039981,town
+Ad-Damir,Sudan,103941,33.959984,17.589972,town
+Atbarah,Sudan,168612,33.979982,17.70999,town
+Kosti,Sudan,345068,32.660011,13.169983,town
+Sennar,Sudan,130122,33.600006,13.54996,town
+El Fasher,Sudan,252609,25.350018,13.629981,town
+Kadugli,Sudan,176931,29.700037,11.00996,town
+Jizan,Saudi Arabia,105198,42.556565,16.906551,town
+Kimberley,South Africa,165264,24.770002,-28.746838,town
+Oudtshoorn,South Africa,76708,22.190004,-33.580032,town
+Saldanha,South Africa,68284,17.930006,-33.010041,town
+Chimoio,Mozambique,256936,33.470039,-19.120036,town
+Lichinga,Mozambique,109839,35.240009,-13.300029,town
+Angoche,Mozambique,57835,39.910008,-16.230031,town
+Mocambique,Mozambique,54315,40.682184,-15.039899,town
+Rustenburg,South Africa,165976,27.240032,-25.650025,town
+Mmabatho,South Africa,104428,25.610002,-25.830014,town
+Klerksdorp,South Africa,178921,26.620018,-26.880027,town
+Kroonstad,South Africa,103992,27.210008,-27.660031,town
+Polokwane,South Africa,220045,29.450026,-23.890029,town
+Thohoyandou,South Africa,269707,30.480041,-22.950035,town
+Vryheid,South Africa,150012,30.789996,-27.760025,town
+Pietermaritzburg,South Africa,750845,30.390021,-29.610042,city
+Inhambane,Mozambique,115776,35.339818,-23.85804,town
+Umtata,South Africa,137772,28.790015,-31.579999,town
+Graaff Reinet,South Africa,62896,24.540042,-32.300007,town
+Bhisho,South Africa,160997,27.389997,-32.869997,town
+Baydhabo,Somalia,129839,43.649986,3.119976,town
+Beledweyne,Somalia,62945,45.200021,4.739981,town
+Gaalkacyo,Somalia,61200,47.430014,6.76996,town
+Jamaame,Somalia,185270,42.750558,0.072178,town
+Kismaayo,Somalia,234852,42.518324,-0.356633,town
+Saint-Louis,Mauritania,220792,-16.510011,16.01999,town
+Ilorin,Nigeria,771000,4.54805,8.491956,city
+Minna,Nigeria,291905,6.550029,9.619993,town
+Zaria,Nigeria,889000,7.708064,11.081927,city
+Jos,Nigeria,816824,8.890041,9.929974,city
+Yola,Nigeria,96006,12.480003,9.209992,town
+Rundu,Namibia,58172,19.749947,-17.920006,town
+Tabora,Tanzania,146495,32.800003,-5.020018,town
+Songea,Tanzania,126449,35.65001,-10.680034,town
+Tanga,Tanzania,224876,39.090007,-5.070041,town
+Berbérati,Central African Republic,61815,15.780008,4.249959,town
+Nakuru,Kenya,364727,36.069984,-0.279997,town
+Malindi,Kenya,94016,40.100022,-3.209999,town
+Kisumu,Kenya,395615,34.750013,-0.090035,town
+Antsirabe,Madagascar,307921,47.033294,-19.850017,town
+Toamasina,Madagascar,210226,49.404984,-18.181798,town
+Lisala,Congo (Kinshasa),70087,21.509994,2.14001,town
+Gemena,Congo (Kinshasa),198056,19.769997,3.260019,town
+Bata,Equatorial Guinea,173046,9.769987,1.870001,town
+Sarh,Chad,169196,18.39003,9.14997,town
+Isiro,Congo (Kinshasa),157196,27.620009,2.759972,town
+Tshikapa,Congo (Kinshasa),267462,20.770039,-6.409959,town
+Boma,Congo (Kinshasa),178638,13.049994,-5.829994,town
+Bukavu,Congo (Kinshasa),436779,28.840038,-2.50999,town
+Uvira,Congo (Kinshasa),170391,29.14002,-3.369989,town
+Kindu,Congo (Kinshasa),262914,25.909984,-2.963916,town
+Mwene-Ditu,Congo (Kinshasa),189177,23.440006,-7.0,town
+Likasi,Congo (Kinshasa),434408,26.780009,-10.970042,town
+Kamina,Congo (Kinshasa),128803,25.009987,-8.730024,town
+Zomba,Malawi,80932,35.310031,-15.390031,town
+Kumasi,Ghana,1646000,-1.63196,6.691937,city
+Sekondi,Ghana,286248,-1.704015,4.943276,town
+Kiffa,Mauritania,73930,-11.399987,16.619979,town
+Mopti,Mali,108456,-4.18004,14.48998,town
+Debre Markos,Ethiopia,70758,37.720013,10.339975,town
+Dese,Ethiopia,183802,39.630025,11.129978,town
+Sodo,Ethiopia,65737,37.749985,6.900004,town
+Arba Minch,Ethiopia,69622,37.549997,6.040005,town
+Harar,Ethiopia,174994,42.150026,9.319959,town
+Jima,Ethiopia,128306,36.830041,7.679982,town
+Nazret,Ethiopia,476892,39.269996,8.549981,town
+Gode,Ethiopia,75000,43.449999,5.95001,town
+Korhogo,Ivory Coast,177711,-5.639951,9.459977,town
+Labé,Guinea,140575,-12.300009,11.319992,town
+Boké,Guinea,116270,-14.29999,10.93999,town
+Kindia,Guinea,117062,-12.869974,10.060018,town
+Daloa,Ivory Coast,255168,-6.450005,6.889979,town
+Mafetang,Lesotho,57059,27.250006,-29.816644,town
+Uíge,Angola,60008,15.049975,-7.620014,town
+Kuito,Angola,114286,16.939989,-12.380034,town
+Lobito,Angola,207932,13.54123,-12.370009,town
+Molepolole,Botswana,63248,25.510009,-24.399972,town
+Moroni,Comoros,128698,43.240244,-11.704158,town
+Benin City,Nigeria,1190000,5.618062,6.342423,city
+Atakpamé,Togo,80683,1.120024,7.530043,town
+Taizz,Yemen,751000,44.037474,13.606398,city
+Kabwe,Zambia,188979,28.449984,-14.440011,town
+Mufulira,Zambia,153624,28.25997,-12.549997,town
+Kitwe,Zambia,404901,28.220024,-12.810033,town
+Livingstone,Zambia,165480,25.860013,-17.860009,town
+Chitungwiza,Zimbabwe,340360,31.100003,-18.000001,town
+Douala,Cameroon,1906000,9.708045,4.062356,city
+Gulu,Uganda,146858,32.280034,2.779997,town
+Kigali,Rwanda,860000,30.058586,-1.951644,city
+Niamey,Niger,232555,7.096404,13.491643,town
+Tahoua,Niger,115956,5.259927,14.899981,town
+Mbabane,eSwatini,90138,31.133335,-26.316651,town
+Kaolack,Senegal,277812,-16.10001,14.149975,town
+Geneina,Sudan,162981,22.440015,13.450017,town
+Juba,South Sudan,111975,31.580026,4.829975,town
+Malakal,South Sudan,160765,31.65599,9.536897,town
+Omdurman,Sudan,2395159,32.480022,15.616681,city
+Al-Ubayyid,Sudan,393311,30.216698,13.18329,town
+Upington,South Africa,71373,21.230011,-28.460034,town
+Worcester,South Africa,127597,19.43994,-33.640028,town
+George,South Africa,174582,22.45004,-33.950035,town
+Tete,Mozambique,129316,33.580007,-16.170035,town
+Pemba,Mozambique,110643,40.532347,-12.983046,town
+Nampula,Mozambique,388526,39.293043,-15.136041,town
+Welkom,South Africa,431944,26.729986,-27.969987,town
+Xai-Xai,Mozambique,128805,33.640003,-25.039984,town
+Quelimane,Mozambique,188964,36.889986,-17.880008,town
+East London,South Africa,338627,27.87002,-32.970043,town
+Maiduguri,Nigeria,896000,13.158067,11.851906,city
+Port Harcourt,Nigeria,1020000,7.008055,4.811948,city
+Makurdi,Nigeria,292645,8.530011,7.729979,town
+Ibadan,Nigeria,2628000,3.928036,7.381972,city
+Ogbomosho,Nigeria,951000,4.238043,8.131952,city
+Warri,Nigeria,830106,5.76,5.519959,city
+Kaduna,Nigeria,1442000,7.438054,10.521961,city
+Walvis Bay,Namibia,52058,14.505306,-22.957528,town
+Mwanza,Tanzania,493944,32.930021,-2.520015,town
+Morogoro,Tanzania,250902,37.660016,-6.820011,town
+Dodoma,Tanzania,218269,35.750004,-6.183306,town
+Arusha,Tanzania,341136,36.669999,-3.360016,town
+Eldoret,Kenya,353381,35.269981,0.520006,town
+Antsiranana,Madagascar,82937,49.311526,-12.276502,town
+Fianarantsoa,Madagascar,184184,47.083265,-21.433331,town
+Mahajanga,Madagascar,154657,46.345016,-15.670014,town
+Toliara,Madagascar,115319,43.689984,-23.356831,town
+Mbandaka,Congo (Kinshasa),274996,18.260012,0.040035,town
+Moundou,Chad,156705,16.090015,8.549981,town
+Kisangani,Congo (Kinshasa),578470,25.22,0.520006,city
+Assab,Eritrea,105496,42.729991,13.010018,town
+Djibouti,Djibouti,923000,43.148002,11.595014,city
+Bandundu,Congo (Kinshasa),118211,17.379962,-3.309993,town
+Kananga,Congo (Kinshasa),765000,22.398072,-5.888096,city
+Kasongo,Congo (Kinshasa),63000,26.660016,-4.450027,town
+Mbuji-Mayi,Congo (Kinshasa),1295000,23.59805,-6.148081,city
+Kalemie,Congo (Kinshasa),206257,29.200016,-5.933295,town
+Butembo,Congo (Kinshasa),286403,29.280011,0.130004,town
+Goma,Congo (Kinshasa),144124,29.221787,-1.678799,town
+Mzuzu,Malawi,110201,34.01998,-11.459987,town
+Blantyre,Malawi,584877,34.989947,-15.790007,city
+Kayes,Congo (Brazzaville),62521,13.280006,-4.180017,town
+Gao,Mali,116967,-0.050008,16.26659,town
+Kayes,Mali,77207,-11.44001,14.449982,town
+Ségou,Mali,122952,-6.260016,13.439992,town
+Bahir Dar,Ethiopia,206748,37.383289,11.600053,town
+Mekele,Ethiopia,95856,39.469983,13.499989,town
+Dire Dawa,Ethiopia,252279,41.860018,9.589995,town
+Pointe-Noire,Congo (Brazzaville),659084,11.880039,-4.770007,city
+Kankan,Guinea,114009,-9.310011,10.389998,town
+Nzérékoré,Guinea,168121,-8.829988,7.760003,town
+Bouaké,Ivory Coast,567481,-5.030014,7.689982,city
+Ebolowa,Cameroon,87875,11.150006,2.900015,town
+Bambari,Central African Republic,62098,20.667203,5.76196,town
+Bamenda,Cameroon,445299,10.150016,5.959984,town
+Garoua,Cameroon,436899,13.390025,9.300012,town
+Malanje,Angola,125856,16.340026,-9.54,town
+Benguela,Angola,151226,13.407233,-12.578264,town
+Lubango,Angola,125632,13.490019,-14.910008,town
+Moçâmedes,Angola,132900,12.160022,-15.190043,town
+Parakou,Benin,188853,2.620036,9.34001,town
+Porto-Novo,Benin,300000,2.616626,6.483311,town
+Francistown,Botswana,89979,27.500016,-21.17004,town
+Mahalapye,Botswana,50744,26.820006,-23.1,town
+Bobo Dioulasso,Burkina Faso,360106,-4.289981,11.179975,town
+Bujumbura,Burundi,331700,29.360006,-3.376087,town
+Berbera,Somaliland,242344,45.016415,10.43555,town
+Lomé,Togo,1452000,1.220811,6.133883,city
+Lusaka,Zambia,1328000,28.281382,-15.414698,city
+Harare,Zimbabwe,1572000,31.042764,-17.815844,city
+Bulawayo,Zimbabwe,699385,28.580002,-20.169998,city
+Kampala,Uganda,1420000,32.581378,0.318605,city
+Aden,Yemen,1000000,45.00949,12.779723,city
+Zinder,Niger,230358,8.983317,13.799996,town
+Niamey,Niger,915000,2.11471,13.518652,city
+Freetown,Sierra Leone,827000,-13.236162,8.471957,city
+Agadez,Niger,117770,7.98281,16.995873,town
+Nyala,Sudan,392373,24.889995,12.059973,town
+Wau,South Sudan,127384,27.98996,7.699981,town
+Kassala,Sudan,401477,36.390016,15.459972,town
+Nacala,Mozambique,224795,40.715024,-14.518611,town
+Bloemfontein,South Africa,463064,26.229913,-29.119994,town
+Pretoria,South Africa,1338000,28.227483,-25.704975,city
+Beira,Mozambique,530604,34.870006,-19.820045,city
+Port Elizabeth,South Africa,1021000,25.598083,-33.968088,city
+Maputo,Mozambique,1446000,32.587217,-25.953332,city
+Mogadishu,Somalia,1100000,45.364732,2.068627,city
+Enugu,Nigeria,688862,7.499997,6.450031,city
+Sokoto,Nigeria,732178,5.240031,13.060016,city
+Mbeya,Tanzania,291649,33.430042,-8.890014,town
+Windhoek,Namibia,268132,17.083546,-22.570006,town
+Zanzibar,Tanzania,403658,39.200026,-6.16,town
+Abuja,Nigeria,1576000,7.489505,9.05462,city
+Bissau,Guinea Bissau,403339,-15.598361,11.865024,town
+Mombasa,Kenya,882000,39.687972,-4.03808,city
+Maseru,Lesotho,361324,27.483273,-29.316674,town
+Antananarivo,Madagascar,1697000,47.514678,-18.914691,city
+Bumba,Congo (Kinshasa),160539,22.459962,2.189981,town
+N'Djamena,Chad,989000,15.047202,12.115042,city
+Abéché,Chad,158317,20.829984,13.839994,town
+Malabo,Equatorial Guinea,155963,8.783278,3.750015,town
+Asmara,Eritrea,620802,38.933324,15.333339,city
+Kikwit,Congo (Kinshasa),637736,18.850002,-5.030043,city
+Matadi,Congo (Kinshasa),245862,13.450021,-5.81661,town
+Kolwezi,Congo (Kinshasa),418000,25.47244,-10.716724,town
+Lubumbashi,Congo (Kinshasa),1352000,27.478072,-11.678079,city
+Lilongwe,Malawi,646750,33.783302,-13.983295,city
+Libreville,Gabon,578156,9.457965,0.385389,city
+Port-Gentil,Gabon,116836,8.780022,-0.720022,town
+Timbuktu,Mali,68872,-3.016596,16.766585,town
+Bamako,Mali,1494000,-8.001985,12.65196,city
+Gondar,Ethiopia,156230,37.460028,12.610043,town
+Brazzaville,Congo (Brazzaville),1355000,15.282744,-4.25724,city
+Conakry,Guinea,1494000,-13.682181,9.533469,city
+Yamoussoukro,Ivory Coast,206499,-5.275503,6.818381,town
+Bangui,Central African Republic,831925,18.558288,4.366644,city
+Maroua,Cameroon,319941,14.324696,10.595566,town
+Yaoundé,Cameroon,1611000,11.514705,3.868647,city
+Huambo,Angola,1100000,15.758064,-12.74804,city
+Cotonou,Benin,762000,2.404355,6.36298,city
+Gaborone,Botswana,208411,25.911948,-24.646314,town
+Ouagadougou,Burkina Faso,1149000,-1.52667,12.372262,city
+Hargeisa,Somaliland,477876,44.06531,9.560022,town
+São Tomé,Sao Tome and Principe,88219,6.72965,0.337466,town
+Sanaa,Yemen,2008000,44.204648,15.356679,city
+Khartoum,Sudan,4754000,32.532233,15.590024,city
+Durban,South Africa,2729000,31.010944,-29.860662,city
+Kano,Nigeria,3140000,8.518092,12.001923,city
+Dar es Salaam,Tanzania,2930000,39.266396,-6.798067,city
+Monrovia,Liberia,1041000,-10.79966,6.314582,city
+Accra,Ghana,2121000,-0.218662,5.55198,city
+Abidjan,Ivory Coast,3802000,-4.020207,5.323126,city
+Luanda,Angola,5172900,13.232481,-8.83634,city
+Dakar,Senegal,2604000,-17.475076,14.717778,city
+Johannesburg,South Africa,3435000,28.028064,-26.168099,city
+Kinshasa,Congo (Kinshasa),7843000,15.313026,-4.327778,city
+Addis Ababa,Ethiopia,3100000,38.698059,9.035256,city
+Cape Town,South Africa,3215000,18.433042,-33.918065,city
+Lagos,Nigeria,9466000,3.389585,6.445208,city
+Nairobi,Kenya,3010000,36.814711,-1.281401,city

@@ -20,6 +20,13 @@ data/processed/*.pkl
 data/processed/*.geojson
 !data/raw/mrds_copper_az_nv.geojson
 !data/raw/faults_az_nv.geojson
+!data/raw/mrds_africa_copper.geojson
+!data/raw/faults_africa.geojson
+!data/raw/cities_africa.csv
+!data/raw/oil_gas_africa.csv
+!data/raw/ports_africa.csv
+!data/raw/railways_africa.geojson
+!data/raw/countries_africa.geojson
 !data/processed/predictions.csv
 !data/processed/training_set.csv
 !data/processed/prediction_grid.csv
