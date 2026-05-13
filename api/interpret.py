@@ -1,15 +1,22 @@
 """GET /api/interpret — LLM geological + ESG + logistics narrative for a target.
-Priority: Groq (LLaMA-3.3-70B) → HuggingFace (Mistral-7B) → rule-based fallback.
+Priority: Groq (LLaMA-3.3-70B) → HuggingFace → rule-based fallback.
+
+HuggingFace model is chosen via HF_MODEL env var (default: Mistral-7B-Instruct-v0.3).
+Other good free-tier options:
+  - HuggingFaceH4/zephyr-7b-beta
+  - Qwen/Qwen2.5-7B-Instruct
+  - tiiuae/falcon-7b-instruct
 """
 import sys, os; sys.path.insert(0, os.path.dirname(__file__))
-import json, math, urllib.request, urllib.error
+import json, math, time, urllib.request, urllib.error
 from _utils import BaseHandler, DATA_PROC, DATA_RAW, read_csv, infer_country, score_tier
 
 GROQ_KEY = os.environ.get("GROQ_API_KEY", "")
 HF_KEY   = os.environ.get("HF_API_KEY", "")
+HF_MODEL = os.environ.get("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.3")
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-HF_URL   = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3"
+HF_URL   = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
 
 _GRID  = None
 _DUMPS = None
@@ -107,21 +114,49 @@ def _call_groq(prompt: str) -> str:
         return json.loads(r.read())["choices"][0]["message"]["content"].strip()
 
 
-def _call_hf(prompt: str) -> str:
+def _call_hf(prompt: str, retries: int = 2) -> str:
+    # Mistral/Zephyr use [INST] tokens; Qwen/Falcon use plain text
+    if "mistral" in HF_MODEL.lower() or "zephyr" in HF_MODEL.lower():
+        text_input = f"<s>[INST]{prompt}[/INST]"
+    else:
+        text_input = prompt
+
     payload = json.dumps({
-        "inputs": f"<s>[INST]{prompt}[/INST]",
-        "parameters": {"max_new_tokens": 800, "temperature": 0.35, "return_full_text": False},
+        "inputs": text_input,
+        "parameters": {
+            "max_new_tokens":  900,
+            "temperature":     0.35,
+            "return_full_text": False,
+            "do_sample":       True,
+        },
+        "options": {"wait_for_model": True},   # waits up to 60s if model is cold
     }).encode()
-    req = urllib.request.Request(
-        HF_URL, data=payload,
-        headers={"Content-Type": "application/json",
-                 "Authorization": f"Bearer {HF_KEY}"},
-    )
-    with urllib.request.urlopen(req, timeout=45) as r:
-        data = json.loads(r.read())
-        if isinstance(data, list):
-            return data[0].get("generated_text", "").strip()
-        return data.get("generated_text", "").strip()
+
+    for attempt in range(retries + 1):
+        req = urllib.request.Request(
+            HF_URL, data=payload,
+            headers={"Content-Type": "application/json",
+                     "Authorization": f"Bearer {HF_KEY}"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=55) as r:
+                data = json.loads(r.read())
+                # Handle loading state (shouldn't happen with wait_for_model=True, but just in case)
+                if isinstance(data, dict) and data.get("error","").startswith("Model"):
+                    eta = data.get("estimated_time", 20)
+                    if attempt < retries:
+                        time.sleep(min(eta, 25))
+                        continue
+                    raise ValueError(data.get("error"))
+                if isinstance(data, list):
+                    return data[0].get("generated_text", "").strip()
+                return data.get("generated_text", "").strip()
+        except urllib.error.HTTPError as e:
+            if e.code == 503 and attempt < retries:
+                time.sleep(20)
+                continue
+            raise
+    raise RuntimeError("HuggingFace inference failed after retries")
 
 
 def _rule_based(lat, lon, score, tier, co_cu, ni_cu, country):
