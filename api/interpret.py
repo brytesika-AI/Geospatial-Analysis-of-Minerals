@@ -19,7 +19,8 @@ HF_KEY   = os.environ.get("HF_API_KEY", "")
 HF_MODEL = os.environ.get("HF_MODEL", "HuggingFaceH4/zephyr-7b-beta")
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-HF_URL   = "https://api-inference.huggingface.co/v1/chat/completions"
+# Per-model chat endpoint — correct format for HF Inference API (2024+)
+HF_URL   = f"https://api-inference.huggingface.co/models/{HF_MODEL}/v1/chat/completions"
 
 _GRID  = None
 _DUMPS = None
