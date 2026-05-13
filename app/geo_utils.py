@@ -157,27 +157,46 @@ def score_to_rgba(score: float, alpha: int = 180) -> list[int]:
 
 # ── Study-area bounds ─────────────────────────────────────────────────────────
 
-# Central / Southern Africa Copperbelt study area
+# ML model scoring bbox (Central/Southern Africa Copperbelt)
 STUDY_BBOX = dict(minlon=15.0, minlat=-35.0, maxlon=38.0, maxlat=0.0)
+
+# Broader Sub-Saharan Africa context bbox (for sidebar query inputs)
+SSA_BBOX = dict(minlon=-18.0, minlat=-35.0, maxlon=53.0, maxlat=18.0)
 
 
 def within_africa_study_area(lat: float, lon: float) -> bool:
-    """Return True if coordinates fall within the Africa study bbox."""
+    """Return True if coordinates fall within the broader SSA query area."""
+    b = SSA_BBOX
+    return b["minlon"] <= lon <= b["maxlon"] and b["minlat"] <= lat <= b["maxlat"]
+
+
+def within_model_bbox(lat: float, lon: float) -> bool:
+    """Return True if coordinates are within the ML model scoring grid."""
     b = STUDY_BBOX
     return b["minlon"] <= lon <= b["maxlon"] and b["minlat"] <= lat <= b["maxlat"]
 
 
 def infer_country(lat: float, lon: float) -> str:
-    """Simple bounding-box country assignment for the study region."""
-    if -15 <= lat <= -8  and 22 <= lon <= 34: return "Zambia"
-    if -13 <= lat <= -4  and 18 <= lon <= 31: return "DRC"
-    if -27 <= lat <= -18 and 20 <= lon <= 30: return "Botswana"
-    if -23 <= lat <= -15 and 26 <= lon <= 34: return "Zimbabwe"
-    if -29 <= lat <= -17 and 11 <= lon <= 25: return "Namibia"
-    if -35 <= lat <= -22 and 17 <= lon <= 33: return "South Africa"
-    if -27 <= lat <= -10 and 32 <= lon <= 36: return "Mozambique"
+    """Bounding-box country assignment for Sub-Saharan Africa."""
+    if -15 <= lat <= -8   and 22 <= lon <= 34:  return "Zambia"
+    if -13 <= lat <= -4   and 18 <= lon <= 31:  return "DRC"
+    if -27 <= lat <= -18  and 20 <= lon <= 30:  return "Botswana"
+    if -23 <= lat <= -15  and 26 <= lon <= 34:  return "Zimbabwe"
+    if -29 <= lat <= -17  and 11 <= lon <= 25:  return "Namibia"
+    if -35 <= lat <= -22  and 17 <= lon <= 33:  return "South Africa"
+    if -27 <= lat <= -10  and 32 <= lon <= 36:  return "Mozambique"
+    if -12 <= lat <= 0    and 29 <= lon <= 41:  return "Tanzania"
+    if -5  <= lat <= 5    and 33 <= lon <= 42:  return "Kenya"
+    if -18 <= lat <= -5   and 12 <= lon <= 25:  return "Angola"
+    if -3  <= lat <= 5    and 29 <= lon <= 36:  return "Uganda"
+    if -18 <= lat <= -9   and 33 <= lon <= 36:  return "Malawi"
+    if -3  <= lat <= 12   and -4 <= lon <= 2:   return "Ghana"
+    if -4  <= lat <= 4    and 8  <= lon <= 16:  return "Gabon"
+    if 3   <= lat <= 15   and 7  <= lon <= 15:  return "Nigeria"
+    if 3   <= lat <= 18   and 14 <= lon <= 24:  return "Chad"
+    if 3   <= lat <= 13   and 39 <= lon <= 48:  return "Ethiopia"
     return "Africa"
 
 
-# Map centre: Central Africa Copperbelt
-REGION_CENTER = {"lat": -18.0, "lon": 27.0}
+# Map centre: Sub-Saharan Africa overview
+REGION_CENTER = {"lat": -10.0, "lon": 25.0}

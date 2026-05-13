@@ -32,7 +32,7 @@ load_dotenv(ROOT / ".env")
 
 from app.geo_utils import (
     REGION_CENTER, humanise_features, infer_country,
-    within_africa_study_area,
+    within_africa_study_area, within_model_bbox,
 )
 from app.llm_interpreter import GeoInterpreter
 from app.mineral_systems import (
@@ -457,9 +457,9 @@ def render_sidebar(meta: dict, model_ok: bool):
 
         # ── Point query ──
         st.markdown("**Query Location**")
-        lat = st.number_input("Latitude (°S negative)", value=-12.5,
+        lat = st.number_input("Latitude (°S negative, °N positive)", value=-12.5,
                               min_value=-35.0, max_value=18.0, format="%.4f")
-        lon = st.number_input("Longitude (°E)", value=28.2,
+        lon = st.number_input("Longitude (°E positive, °W negative)", value=28.2,
                               min_value=-18.0, max_value=53.0, format="%.4f")
         score_btn = st.button("Score location", use_container_width=True)
 
@@ -1448,10 +1448,12 @@ def main() -> None:
           <h1>GeoExplorer AI — Resource Intelligence Platform</h1>
           <p class="lede">
             Machine-learning prospectivity screening for copper, cobalt, nickel and
-            <strong>green metals (Li · Mn · REE · Graphite)</strong> across Sub-Saharan Africa,
-            integrated with oil &amp; gas basin intelligence and infrastructure context.
+            <strong>green critical metals (Li · Mn · REE · Graphite · V)</strong> across
+            Sub-Saharan Africa — integrated with oil &amp; gas basin intelligence,
+            urban centres, railways and seaport infrastructure context.
             Zambia · DRC · South Africa · Tanzania · Kenya · Angola · Botswana ·
             Zimbabwe · Mozambique · Namibia · Ghana · Uganda · Gabon · Malawi.
+            XGBoost · 20,125 scored grid cells · ROC-AUC 0.889 spatial CV.
           </p>
         </section>
         """,
@@ -1485,10 +1487,12 @@ def main() -> None:
 
     with tabs[3]:
         if score_btn or st.session_state.get("scored"):
-            if not within_africa_study_area(query_lat, query_lon):
+            if not within_model_bbox(query_lat, query_lon):
                 st.warning(
-                    "Coordinates fall outside the study area (15°E–38°E, 35°S–0°). "
-                    "Adjust in the sidebar."
+                    "Coordinates fall outside the ML scoring grid "
+                    "(15°E–38°E, 35°S–0° — Central/Southern Africa Copperbelt). "
+                    "The prospectivity model was trained on this region. "
+                    "Adjust coordinates in the sidebar or use the nearest grid cell result."
                 )
             elif predictions.empty:
                 st.error("No predictions loaded — run the pipeline first.")
