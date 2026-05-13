@@ -88,4 +88,22 @@ class handler(BaseHandler):
                 return {"count": len(lines), "data": lines}
             return {"count": 0, "data": []}
 
+        if dtype == "tailings":
+            path = DATA_RAW / "mining_dumps_africa.csv"
+            if path.exists():
+                rows = read_csv(path)
+                out  = [{"lat":       float(r["lat"]),
+                          "lon":       float(r["lon"]),
+                          "name":      r.get("name",""),
+                          "country":   r.get("country",""),
+                          "commodity": r.get("commodity",""),
+                          "type":      r.get("type",""),
+                          "est_grade": r.get("est_grade",""),
+                          "volume_mt": r.get("volume_mt",""),
+                          "status":    r.get("status",""),
+                          "notes":     r.get("notes","")}
+                        for r in rows if r.get("lat") and r.get("lon")]
+                return {"count": len(out), "data": out}
+            return {"count": 0, "data": []}
+
         return {"error": f"Unknown type: {dtype}"}

@@ -1,0 +1,34 @@
+name,lat,lon,country,commodity,type,est_grade,volume_mt,status,notes
+Crown Mines TSF,-26.22,27.97,South Africa,Gold,Tailings,0.30 g/t Au,120,Reprocessing candidate,Witwatersrand gold tailings near Johannesburg
+Driefontein TSF,-26.39,27.37,South Africa,Gold,Tailings,0.25 g/t Au,85,Reprocessing candidate,Far West Rand gold tailings - Sibanye area
+Kloof TSF,-26.43,27.52,South Africa,Gold,Tailings,0.28 g/t Au,95,Reprocessing candidate,Sibanye-Stillwater operational area
+Stilfontein TSF,-26.83,26.77,South Africa,Gold,Dump,0.22 g/t Au,60,Abandoned,Historical gold mining dump
+ERPM TSF,-26.30,28.22,South Africa,Gold + Uranium,Tailings,0.30 g/t Au; 100 ppm U,45,Environmental concern,East Rand Proprietary Mines - uranium risk
+Buffelsfontein TSF,-26.77,26.65,South Africa,Gold,Tailings,0.20 g/t Au,55,Abandoned,Historical West Rand gold tailings
+Grootvlei TSF,-26.72,28.37,South Africa,Gold,Tailings,0.18 g/t Au,40,Abandoned,Springs district historical tailings
+Harmony Doornkop TSF,-26.38,27.71,South Africa,Gold + Silver,Tailings,0.25 g/t Au,70,Active reprocessing,Harmony Gold tailings retreatment
+Nkana TSF,-12.81,28.21,Zambia,Copper,Tailings,0.18% Cu,180,Active reprocessing,Kitwe Copperbelt - Mopani Copper Mines
+Nchanga TSF,-12.53,27.89,Zambia,Copper + Cobalt,Tailings,0.15% Cu; 0.04% Co,220,Active reprocessing,Chingola - Vedanta/Zambia Copper Mines
+Mufulira TSF,-12.55,28.25,Zambia,Copper,Tailings,0.12% Cu,90,Care and maintenance,Mufulira Mine Copperbelt
+Konkola TSF,-12.37,28.00,Zambia,Copper,Tailings,0.20% Cu,140,Active,Deep Copperbelt - Konkola Copper Mines
+Luanshya Baluba TSF,-13.14,28.41,Zambia,Copper + Cobalt,Tailings,0.14% Cu; 0.03% Co,65,Care and maintenance,Luanshya Copper Mines
+Chambishi TSF,-12.63,28.05,Zambia,Copper + Cobalt,Tailings,0.16% Cu; 0.05% Co,85,Reprocessing candidate,NFCA/CNMC Chambishi area
+Gecamines Panda TSF,-11.69,27.47,DRC,Copper + Cobalt,Tailings,0.25% Cu; 0.10% Co,500,Reprocessing candidate,Lubumbashi - historical Gécamines
+Kolwezi Tailings,-10.72,25.47,DRC,Cobalt + Copper,Tailings,0.15% Cu; 0.35% Co,350,Active reprocessing,Famous cobalt heterogenite tailings
+Boss Mining TSF,-10.52,25.21,DRC,Cobalt,Tailings,0.50% Co,80,Active reprocessing,Comide/Boss cobalt tailings - high Co
+Shituru TSF,-10.98,26.73,DRC,Copper + Cobalt,Tailings,0.20% Cu; 0.08% Co,95,Reprocessing candidate,Likasi Gécamines historical tailings
+Kamoto TSF,-10.87,25.42,DRC,Copper + Cobalt,Tailings,0.30% Cu; 0.15% Co,120,Active,KCC/Glencore area Kolwezi
+Bindura Nickel TSF,-17.29,31.33,Zimbabwe,Nickel,Tailings,0.22% Ni,35,Care and maintenance,Bindura Nickel Corporation
+Trojan Nickel TSF,-17.37,31.13,Zimbabwe,Nickel + Cobalt,Tailings,0.18% Ni; 0.02% Co,25,Abandoned,Historical Zimbabwe nickel mining
+Empress Nickel TSF,-17.52,30.98,Zimbabwe,Nickel,Tailings,0.19% Ni,28,Abandoned,Historical Bindura district
+Great Dyke Chrome TSF,-18.20,30.01,Zimbabwe,Chromite + PGM,Tailings,4% Cr2O3; 1.5 g/t PGM,200,Reprocessing candidate,Zimasco/Zisco chrome dumps
+Renco Mine TSF,-20.32,31.22,Zimbabwe,Gold,Tailings,0.35 g/t Au,18,Active reprocessing,Midlands gold tailings
+Tsumeb Smelter TSF,-19.21,17.72,Namibia,Copper + Lead + Zinc,Tailings,0.30% Cu; 0.40% Pb; 0.60% Zn,25,Environmental concern,Historic Tsumeb smelter complex
+Rosh Pinah TSF,-27.93,16.77,Namibia,Zinc + Lead,Tailings,0.80% Zn; 0.50% Pb,8,Active,Rosh Pinah Zinc mine current tailings
+Okiep Copper TSF,-29.58,17.88,South Africa,Copper,Tailings,0.25% Cu,22,Care and maintenance,Namaqualand Copper Belt historical
+Messina Copper TSF,-22.36,29.98,South Africa,Copper,Dump,0.20% Cu,18,Abandoned,Limpopo copper district dumps
+Palabora TSF,-23.97,31.13,South Africa,Copper + Vermiculite + REE,Tailings,0.08% Cu; REE trace,800,Active,Palabora Mining Company - large volume
+Phalaborwa Foskor TSF,-23.94,31.15,South Africa,Phosphate + REE,Tailings,3% P2O5; 0.5% REE,400,Active reprocessing,Foskor phosphate tailings - REE potential
+Rustenburg PGM TSF,-25.67,27.24,South Africa,PGM + Nickel + Copper,Tailings,1.5 g/t PGM; 0.05% Ni,350,Active reprocessing,Anglo American Platinum - Rustenburg
+Impala Platinum TSF,-25.91,27.43,South Africa,PGM + Nickel,Tailings,1.8 g/t PGM; 0.04% Ni,280,Active reprocessing,Implats Rustenburg retreatment
+Lonmin Marikana TSF,-25.71,27.48,South Africa,PGM,Tailings,1.6 g/t PGM,220,Reprocessing candidate,Sibanye-Stillwater Marikana

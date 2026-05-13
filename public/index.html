@@ -192,6 +192,45 @@ tr:hover td{background:rgba(255,255,255,.02)}
 }
 .btn-outline:hover{border-color:var(--gold);color:var(--gold)}
 
+/* ── Interpret panel ────────────────────────────────────────────── */
+.interpret-panel{
+  position:fixed;right:-480px;top:56px;bottom:0;width:460px;
+  background:#0d1b2e;border-left:1px solid var(--border);
+  z-index:2000;overflow-y:auto;transition:right .3s ease;
+  display:flex;flex-direction:column;
+}
+.interpret-panel.open{right:0}
+.panel-header{
+  padding:16px 18px 12px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+  background:#09101c;position:sticky;top:0;z-index:1;
+}
+.panel-target-id{font-size:1rem;font-weight:800;color:var(--gold)}
+.panel-close{
+  margin-left:auto;background:none;border:1px solid var(--border);
+  color:var(--muted);border-radius:4px;padding:4px 10px;font-size:1rem;
+  transition:all .15s;
+}
+.panel-close:hover{border-color:var(--red);color:var(--red)}
+.panel-meta{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--panel);
+}
+.panel-meta-item .lbl{font-size:0.65rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.panel-meta-item .val{font-size:1.0rem;font-weight:800;color:var(--gold)}
+.panel-body{padding:18px;display:flex;flex-direction:column;gap:16px}
+.panel-section{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.panel-section-title{
+  font-size:0.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  margin-bottom:10px;display:flex;align-items:center;gap:6px;
+}
+.panel-section-body{font-size:0.8rem;color:var(--muted);line-height:1.65;white-space:pre-wrap}
+.panel-section-body ul{padding-left:16px;margin-top:4px}
+.panel-section-body li{margin-bottom:4px}
+.panel-source{font-size:0.68rem;color:var(--muted);text-align:right;margin-top:4px;font-style:italic}
+.esg-badge{display:inline-block;background:#064e3b;color:#34d399;border-radius:4px;padding:2px 7px;font-size:0.65rem;font-weight:700;margin-left:6px}
+.dump-badge{display:inline-block;background:#431407;color:#fb923c;border-radius:4px;padding:2px 7px;font-size:0.65rem;font-weight:700;margin-left:6px}
+
 /* ── Spinner ────────────────────────────────────────────────────── */
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -293,6 +332,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div class="ctrl-row"><input type="checkbox" id="lyr-cities" checked onchange="toggleLayer('cities')"><div class="dot" style="background:#e2e8f0"></div><label for="lyr-cities">Cities</label></div>
         <div class="ctrl-row"><input type="checkbox" id="lyr-ports" onchange="toggleLayer('ports')"><div class="dot" style="background:#60a5fa"></div><label for="lyr-ports">Seaports</label></div>
         <div class="ctrl-row"><input type="checkbox" id="lyr-rails" onchange="toggleLayer('rails')"><div class="dot" style="background:#475569"></div><label for="lyr-rails">Railways</label></div>
+        <div class="ctrl-row"><input type="checkbox" id="lyr-dumps" onchange="toggleLayer('dumps')"><div class="dot" style="background:#fb923c"></div><label for="lyr-dumps">Mining Dumps</label></div>
+        <div class="ctrl-row"><input type="checkbox" id="lyr-click" checked onchange="toggleLayer('click')"><div class="dot" style="background:#f59e0b;border:2px solid #fff"></div><label for="lyr-click">Top Targets ✦</label></div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;border-top:1px solid var(--border);padding-top:8px">
+          Click a <strong style="color:var(--gold)">✦ target</strong> for<br>AI geological + ESG analysis
+        </div>
       </div>
       <div id="score-tooltip">
         <div class="t-score" id="tt-score">—</div>
@@ -303,6 +347,22 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
     </div>
   </div>
+
+<!-- ── AI Interpret Panel ── -->
+<div id="interpret-panel" class="interpret-panel">
+  <div class="panel-header">
+    <div class="panel-target-id" id="panel-title">AFR-001</div>
+    <span id="panel-tier-badge" class="tier-badge" style="font-size:0.72rem"></span>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-meta" id="panel-meta"></div>
+  <div class="panel-body" id="panel-body">
+    <div style="text-align:center;padding:40px 0;color:var(--muted)">
+      <div class="spinner" style="width:32px;height:32px;border-width:3px;margin:0 auto 14px"></div>
+      Generating AI geological + ESG analysis…
+    </div>
+  </div>
+</div>
 
   <!-- DASHBOARD TAB -->
   <div id="tab-dashboard" class="tab-content">
@@ -583,6 +643,8 @@ function initMap() {
   layers.cities= L.layerGroup().addTo(map);
   layers.ports = L.layerGroup();
   layers.rails = L.layerGroup();
+  layers.dumps = L.layerGroup();
+  layers.click = L.layerGroup().addTo(map);
 
   map.on('click', e => scorePointOnMap(e.latlng.lat, e.latlng.lng));
   loadContextLayers();
@@ -671,6 +733,124 @@ async function loadContextLayers() {
           .bindTooltip(seg.name||'Railway').addTo(layers.rails);
     });
   } catch(e){}
+
+  // Mining dumps & tailings
+  loadTailings();
+}
+
+async function loadTailings() {
+  try {
+    const r = await fetch(API+'/api/data?type=tailings');
+    const d = await r.json();
+    layers.dumps.clearLayers();
+    (d.data||[]).forEach(dump => {
+      const active = (dump.status||'').toLowerCase().includes('active');
+      const col = active ? '#fb923c' : '#78350f';
+      const icon = L.divIcon({
+        html:`<div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid ${col};filter:drop-shadow(0 0 3px ${col})"></div>`,
+        iconSize:[16,14], iconAnchor:[8,14], className:''
+      });
+      L.marker([dump.lat,dump.lon], {icon})
+        .bindTooltip(`<b>⛏ ${dump.name}</b><br><span style="color:#fb923c">${dump.commodity}</span><br>Grade: ${dump.est_grade}<br>Volume: ${dump.volume_mt} Mt<br>Status: ${dump.status}<br><em style="color:#94a3b8">${dump.notes}</em>`, {maxWidth:260})
+        .addTo(layers.dumps);
+    });
+  } catch(e){ console.warn('tailings load failed', e); }
+}
+
+async function loadClickableTargets() {
+  layers.click.clearLayers();
+  const top = (state.targets||[]).slice(0,60);
+  top.forEach(t => {
+    const col = t.tier==='Very High'?'#f87171':t.tier==='High'?'#f59e0b':t.tier==='Moderate'?'#60a5fa':'#475569';
+    const icon = L.divIcon({
+      html:`<div style="background:${col};width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px ${col};cursor:pointer"></div>`,
+      iconSize:[14,14], iconAnchor:[7,7], className:''
+    });
+    L.marker([t.lat,t.lon], {icon})
+      .bindTooltip(`<b>${t.id}</b> · Score ${t.score}<br>Click for AI analysis`, {direction:'top'})
+      .on('click', () => interpretTarget(t))
+      .addTo(layers.click);
+  });
+}
+
+/* ── AI Interpret Panel ─────────────────────────────────────────── */
+function closePanel() {
+  document.getElementById('interpret-panel').classList.remove('open');
+}
+
+async function interpretTarget(t) {
+  const panel = document.getElementById('interpret-panel');
+  panel.classList.add('open');
+
+  // Header
+  document.getElementById('panel-title').textContent = t.id || 'Target';
+  const tierCls = {'Very High':'tier-VH','High':'tier-H','Moderate':'tier-M','Low':'tier-L'}[t.tier]||'tier-L';
+  const badge = document.getElementById('panel-tier-badge');
+  badge.textContent = t.tier; badge.className = `tier-badge ${tierCls}`;
+
+  // Meta strip
+  document.getElementById('panel-meta').innerHTML = `
+    <div class="panel-meta-item"><div class="lbl">Score</div><div class="val">${(t.score||0).toFixed(3)}</div></div>
+    <div class="panel-meta-item"><div class="lbl">Country</div><div class="val" style="font-size:.85rem">${t.country||'—'}</div></div>
+    <div class="panel-meta-item"><div class="lbl">Co/Cu %</div><div class="val">${(t.co_cu_pct||0).toFixed(1)}%</div></div>
+    <div class="panel-meta-item"><div class="lbl">Ni/Cu %</div><div class="val">${(t.ni_cu_pct||0).toFixed(1)}%</div></div>
+    <div class="panel-meta-item"><div class="lbl">Est. Cost</div><div class="val" style="font-size:.78rem">${t.est_cost||'—'}</div></div>
+    <div class="panel-meta-item"><div class="lbl">Decision</div><div class="val" style="color:${t.decision==='Advance'?'#34d399':'#94a3b8'};font-size:.85rem">${t.decision||'—'}</div></div>
+  `;
+
+  // Loading state
+  document.getElementById('panel-body').innerHTML = `
+    <div style="text-align:center;padding:40px 0;color:var(--muted)">
+      <div class="spinner" style="width:32px;height:32px;border-width:3px;margin:0 auto 14px"></div>
+      Generating AI analysis via LLaMA-3.3 · ESG + Geology + Logistics…
+    </div>`;
+
+  try {
+    const url = `${API}/api/interpret?lat=${t.lat}&lon=${t.lon}&score=${t.score}&tier=${encodeURIComponent(t.tier)}&co_cu=${t.co_cu_pct||0}&ni_cu=${t.ni_cu_pct||0}&country=${encodeURIComponent(t.country||'')}`;
+    const res = await fetch(url);
+    const d   = await res.json();
+    renderPanel(d, t);
+  } catch(e) {
+    document.getElementById('panel-body').innerHTML =
+      `<div style="color:var(--red);padding:20px">Failed to load AI analysis: ${e.message}</div>`;
+  }
+}
+
+function renderPanel(d, t) {
+  const s = d.sections || {};
+  const srcLabel = d.source === 'groq-llama3.3' ? '🤖 LLaMA-3.3-70B via Groq'
+                 : d.source === 'huggingface-mistral7b' ? '🤖 Mistral-7B via HuggingFace'
+                 : '📐 Rule-based (configure GROQ_API_KEY for LLM)';
+
+  const sectionHTML = (icon, title, colorVar, key) => {
+    const text = s[key] || '';
+    if (!text) return '';
+    // Format bullets
+    const formatted = text.replace(/^[•\-\*] /gm, '').split('\n')
+      .filter(l=>l.trim())
+      .map(l => l.startsWith('•')||l.match(/^(Water|ASM|Bio|Community|Carbon|Port|Road|Power|Water Source|Tailings)/)
+        ? `<li>${l.replace(/^[•\-] /,'')}</li>` : `<p style="margin-bottom:6px">${l}</p>`)
+      .join('');
+    const hasBullets = formatted.includes('<li>');
+    return `
+      <div class="panel-section">
+        <div class="panel-section-title" style="color:${colorVar}">
+          ${icon} ${title}
+          ${key==='ESG CONSIDERATIONS'?'<span class="esg-badge">ESG</span>':''}
+          ${key==='GEOLOGICAL RATIONALE'&&(t.co_cu_pct>=10||t.ni_cu_pct>=20)?'<span class="dump-badge">SHSC FLAG</span>':''}
+        </div>
+        <div class="panel-section-body">${hasBullets?`<ul>${formatted}</ul>`:formatted}</div>
+      </div>`;
+  };
+
+  document.getElementById('panel-body').innerHTML = `
+    ${sectionHTML('🪨','Geological Rationale','var(--gold)','GEOLOGICAL RATIONALE')}
+    ${sectionHTML('🌿','ESG Considerations','var(--green)','ESG CONSIDERATIONS')}
+    ${sectionHTML('🚢','Logistics & Infrastructure','var(--blue)','LOGISTICS & INFRASTRUCTURE')}
+    ${sectionHTML('✅','Recommendation','var(--orange)','RECOMMENDATION')}
+    <div class="panel-source">${srcLabel}</div>
+    <div style="height:24px"></div>
+  `;
 }
 
 async function scorePointOnMap(lat, lon) {
@@ -968,6 +1148,7 @@ async function boot() {
     await Promise.all([loadMeta(), loadPredictions()]);
     updateHeatmap();
     await loadTargets();
+    loadClickableTargets();
     buildTargetsTable();
     buildCharts();
   } catch(e){ console.error(e); }
