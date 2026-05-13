@@ -13,10 +13,13 @@ from _utils import BaseHandler, DATA_PROC, DATA_RAW, read_csv, infer_country, sc
 
 GROQ_KEY = os.environ.get("GROQ_API_KEY", "")
 HF_KEY   = os.environ.get("HF_API_KEY", "")
-HF_MODEL = os.environ.get("HF_MODEL", "mistralai/Mistral-7B-Instruct-v0.3")
+# HuggingFace now uses OpenAI-compatible chat completions endpoint (2024+)
+# Default model: zephyr-7b-beta (free, no gating, good instruction following)
+# Alternatives: mistralai/Mistral-7B-Instruct-v0.3, Qwen/Qwen2.5-7B-Instruct
+HF_MODEL = os.environ.get("HF_MODEL", "HuggingFaceH4/zephyr-7b-beta")
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-HF_URL   = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
+HF_URL   = "https://api-inference.huggingface.co/v1/chat/completions"
 
 _GRID  = None
 _DUMPS = None
@@ -115,21 +118,13 @@ def _call_groq(prompt: str) -> str:
 
 
 def _call_hf(prompt: str, retries: int = 2) -> str:
-    # Mistral/Zephyr use [INST] tokens; Qwen/Falcon use plain text
-    if "mistral" in HF_MODEL.lower() or "zephyr" in HF_MODEL.lower():
-        text_input = f"<s>[INST]{prompt}[/INST]"
-    else:
-        text_input = prompt
-
+    # HuggingFace OpenAI-compatible chat completions API (2024+)
     payload = json.dumps({
-        "inputs": text_input,
-        "parameters": {
-            "max_new_tokens":  900,
-            "temperature":     0.35,
-            "return_full_text": False,
-            "do_sample":       True,
-        },
-        "options": {"wait_for_model": True},   # waits up to 60s if model is cold
+        "model":    HF_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens":  900,
+        "temperature": 0.35,
+        "stream":      False,
     }).encode()
 
     for attempt in range(retries + 1):
@@ -141,21 +136,20 @@ def _call_hf(prompt: str, retries: int = 2) -> str:
         try:
             with urllib.request.urlopen(req, timeout=55) as r:
                 data = json.loads(r.read())
-                # Handle loading state (shouldn't happen with wait_for_model=True, but just in case)
-                if isinstance(data, dict) and data.get("error","").startswith("Model"):
-                    eta = data.get("estimated_time", 20)
-                    if attempt < retries:
-                        time.sleep(min(eta, 25))
-                        continue
-                    raise ValueError(data.get("error"))
+                # OpenAI-style response
+                if "choices" in data:
+                    return data["choices"][0]["message"]["content"].strip()
+                # Fallback: legacy text generation format
                 if isinstance(data, list):
                     return data[0].get("generated_text", "").strip()
-                return data.get("generated_text", "").strip()
+                err = data.get("error", "Unknown HF error")
+                raise ValueError(err)
         except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="ignore")
             if e.code == 503 and attempt < retries:
                 time.sleep(20)
                 continue
-            raise
+            raise ValueError(f"HF HTTP {e.code}: {body[:200]}")
     raise RuntimeError("HuggingFace inference failed after retries")
 
 
