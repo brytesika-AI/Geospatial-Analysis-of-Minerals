@@ -6,7 +6,8 @@
     { "src": "api/data.py",        "use": "@vercel/python" },
     { "src": "api/metadata.py",    "use": "@vercel/python" },
     { "src": "api/targets.py",     "use": "@vercel/python" },
-    { "src": "api/health.py",      "use": "@vercel/python" }
+    { "src": "api/health.py",      "use": "@vercel/python" },
+    { "src": "public/**",          "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/predictions", "dest": "/api/predictions.py" },
